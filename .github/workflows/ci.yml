@@ -21,10 +21,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
-      - name: Check ruff version
-        run: ruff --version
       - name: Lint
         run: |
+          ruff format --check src tests
+          ruff check --fix src tests
           ruff check src tests
       - name: Type check
         run: |

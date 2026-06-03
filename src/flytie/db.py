@@ -117,7 +117,7 @@ class Database:
         from alembic.config import Config
 
         from alembic import command
-
+        
         cfg = Config()
         cfg.set_main_option("script_location", str(MIGRATIONS_DIR))
         cfg.set_main_option("sqlalchemy.url", f"sqlite:///{self.settings.db_path}")
