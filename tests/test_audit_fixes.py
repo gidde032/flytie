@@ -26,9 +26,14 @@ def _init(runner: CliRunner) -> None:
 
 def test_config_path_prints_config_file(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
-    r = runner.invoke(app, ["config", "path"])
+    # Wide terminal so Rich/Click doesn't wrap the printed path mid-string.
+    # On a narrow CI terminal, `config.toml` would otherwise split as
+    # `config.tom\nl`, breaking the substring assertion.
+    r = runner.invoke(app, ["config", "path"], env={"COLUMNS": "200"})
     assert r.exit_code == 0
-    assert "config.toml" in r.stdout
+    # Also normalize whitespace in case any wrapping still slips through;
+    # we only care that the filename is present, not where line breaks fall.
+    assert "config.toml" in "".join(r.stdout.split())
 
 
 def test_config_set_then_get_round_trip(env_dirs: tuple[Path, Path]) -> None:
