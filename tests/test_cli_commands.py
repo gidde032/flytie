@@ -26,14 +26,22 @@ def test_add_and_list_round_trip(env_dirs: tuple[Path, Path]) -> None:
     r = runner.invoke(
         app,
         [
-            "add", "Parachute Adams",
-            "--hook", "14",
-            "--tag", "dryfly",
-            "--tag", "classic",
-            "--species", "rainbow trout",
-            "--material", "grizzly hackle,hackle,1,feather",
-            "--material", "grey dubbing,dubbing,1,pinch",
-            "--notes", "Catskill classic.",
+            "add",
+            "Parachute Adams",
+            "--hook",
+            "14",
+            "--tag",
+            "dryfly",
+            "--tag",
+            "classic",
+            "--species",
+            "rainbow trout",
+            "--material",
+            "grizzly hackle,hackle,1,feather",
+            "--material",
+            "grey dubbing,dubbing,1,pinch",
+            "--notes",
+            "Catskill classic.",
         ],
     )
     assert r.exit_code == 0, r.stdout
@@ -52,11 +60,16 @@ def test_view_renders_pattern(env_dirs: tuple[Path, Path]) -> None:
     runner.invoke(
         app,
         [
-            "add", "RS2",
-            "--hook", "20",
-            "--material", "grey thread,thread,1,spool",
-            "--instructions", "Tie in CDC wing post; wrap tight.",
-            "--notes", "Great for Henry's Fork.",
+            "add",
+            "RS2",
+            "--hook",
+            "20",
+            "--material",
+            "grey thread,thread,1,spool",
+            "--instructions",
+            "Tie in CDC wing post; wrap tight.",
+            "--notes",
+            "Great for Henry's Fork.",
         ],
     )
     r = runner.invoke(app, ["view", "RS2"])
@@ -212,7 +225,12 @@ def test_add_from_json_file(env_dirs: tuple[Path, Path], tmp_path: Path) -> None
         "tags": ["nymph", "midge"],
         "species": ["rainbow trout"],
         "materials": [
-            {"canonical_name": "black thread", "category": "thread", "quantity": 1, "unit": "spool"},
+            {
+                "canonical_name": "black thread",
+                "category": "thread",
+                "quantity": 1,
+                "unit": "spool",
+            },
             {"canonical_name": "silver wire", "category": "flash", "quantity": 0.5, "unit": "foot"},
         ],
     }
@@ -252,21 +270,31 @@ def test_list_with_tag_and_species_filters(env_dirs: tuple[Path, Path]) -> None:
     runner.invoke(
         app,
         [
-            "add", "Adams",
-            "--hook", "14",
-            "--tag", "dryfly",
-            "--species", "rainbow trout",
-            "--material", "hackle,hackle",
+            "add",
+            "Adams",
+            "--hook",
+            "14",
+            "--tag",
+            "dryfly",
+            "--species",
+            "rainbow trout",
+            "--material",
+            "hackle,hackle",
         ],
     )
     runner.invoke(
         app,
         [
-            "add", "Pheasant Tail",
-            "--hook", "16",
-            "--tag", "nymph",
-            "--species", "brown trout",
-            "--material", "pheasant tail,tail",
+            "add",
+            "Pheasant Tail",
+            "--hook",
+            "16",
+            "--tag",
+            "nymph",
+            "--species",
+            "brown trout",
+            "--material",
+            "pheasant tail,tail",
         ],
     )
     r = runner.invoke(app, ["list", "--tag", "nymph"])

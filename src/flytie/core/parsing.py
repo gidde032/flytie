@@ -88,9 +88,7 @@ def load_pattern_file(path: Path) -> PatternInput:
         except json.JSONDecodeError as exc:
             raise PatternFileError(f"{expanded}: JSON parse error — {exc}") from exc
     else:
-        raise PatternFileError(
-            f"Unsupported pattern file extension {ext!r}; use .json or .toml."
-        )
+        raise PatternFileError(f"Unsupported pattern file extension {ext!r}; use .json or .toml.")
     if not isinstance(raw, dict):
         raise PatternFileError(
             f"{expanded}: expected a top-level mapping, got {type(raw).__name__}."

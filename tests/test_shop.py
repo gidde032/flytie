@@ -18,13 +18,21 @@ def test_dedupes_matching_material_and_unit(session) -> None:  # type: ignore[no
     _make(
         session,
         "Adams",
-        materials=[MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather")],
+        materials=[
+            MaterialLineDTO(
+                canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"
+            )
+        ],
         tags=["dryfly"],
     )
     _make(
         session,
         "Royal Wulff",
-        materials=[MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=2, unit="feather")],
+        materials=[
+            MaterialLineDTO(
+                canonical_name="grizzly hackle", category="hackle", quantity=2, unit="feather"
+            )
+        ],
         tags=["dryfly"],
     )
     sl = shop_repo.build_shopping_list(session, tags=["dryfly"])
@@ -37,13 +45,17 @@ def test_keeps_distinct_units_separate(session) -> None:  # type: ignore[no-unty
     _make(
         session,
         "A",
-        materials=[MaterialLineDTO(canonical_name="thread", category="thread", quantity=1, unit="spool")],
+        materials=[
+            MaterialLineDTO(canonical_name="thread", category="thread", quantity=1, unit="spool")
+        ],
         tags=["x"],
     )
     _make(
         session,
         "B",
-        materials=[MaterialLineDTO(canonical_name="thread", category="thread", quantity=10, unit="foot")],
+        materials=[
+            MaterialLineDTO(canonical_name="thread", category="thread", quantity=10, unit="foot")
+        ],
         tags=["x"],
     )
     sl = shop_repo.build_shopping_list(session, tags=["x"])
@@ -135,9 +147,7 @@ def test_union_across_selectors(session) -> None:  # type: ignore[no-untyped-def
         species=["brown trout"],
         materials=[MaterialLineDTO(canonical_name="pheasant tail", category="tail", quantity=1)],
     )
-    sl = shop_repo.build_shopping_list(
-        session, tags=["dryfly"], species=["brown trout"]
-    )
+    sl = shop_repo.build_shopping_list(session, tags=["dryfly"], species=["brown trout"])
     assert set(sl.pattern_names) == {"Adams", "Pheasant Tail"}
 
 

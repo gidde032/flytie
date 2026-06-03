@@ -41,13 +41,9 @@ def _pattern(name: str, hook: str = "14", materials: list[str] | None = None) ->
         version_number=1,
         hook_size=hook,
         created_at=now,
-        materials=[
-            MaterialLineDTO(canonical_name=m, category="other") for m in (materials or [])
-        ],
+        materials=[MaterialLineDTO(canonical_name=m, category="other") for m in (materials or [])],
     )
-    return PatternDTO(
-        id=1, name=name, created_at=now, updated_at=now, current_version=version
-    )
+    return PatternDTO(id=1, name=name, created_at=now, updated_at=now, current_version=version)
 
 
 def _fake_streamer(chunks: list[str]):
@@ -227,9 +223,7 @@ def test_grounding_block_excludes_material_notes() -> None:
             )
         ],
     )
-    dto = PatternDTO(
-        id=1, name="Adams", created_at=now, updated_at=now, current_version=version
-    )
+    dto = PatternDTO(id=1, name="Adams", created_at=now, updated_at=now, current_version=version)
     _, user = build_prompt(SuggestionRequest(species="trout", season="fall"), [dto])
     assert "thread" in user  # the name IS sent
     assert "SECRET-MATERIAL-NOTE" not in user  # the note is NOT
@@ -286,7 +280,7 @@ def test_streamer_wraps_unexpected_exception(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_streamer_detects_max_tokens_truncation(monkeypatch: pytest.MonkeyPatch) -> None:
-    fake = make_fake_anthropic(chunks=("[{\"name\":", '"Adams"}]'), stop_reason="max_tokens")
+    fake = make_fake_anthropic(chunks=('[{"name":', '"Adams"}]'), stop_reason="max_tokens")
     _patch_anthropic(monkeypatch, fake)
     streamer = anthropic_streamer("sk-ant-key")
     with pytest.raises(AIError, match="cut off"):
@@ -339,9 +333,7 @@ def test_cli_suggest_wires_on_chunk_callback(
         return SuggestionResult(request=request, suggestions=[], raw_text="[]")
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
-    monkeypatch.setattr(
-        "flytie.ai.anthropic_streamer", lambda *a, **k: _fake_streamer([])
-    )
+    monkeypatch.setattr("flytie.ai.anthropic_streamer", lambda *a, **k: _fake_streamer([]))
     monkeypatch.setattr("flytie.ai.generate_suggestions", _fake_generate)
     runner = CliRunner()
     _init(runner)
@@ -357,9 +349,7 @@ def test_cli_suggest_handles_keyboard_interrupt(
         raise KeyboardInterrupt
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
-    monkeypatch.setattr(
-        "flytie.ai.anthropic_streamer", lambda *a, **k: _fake_streamer([])
-    )
+    monkeypatch.setattr("flytie.ai.anthropic_streamer", lambda *a, **k: _fake_streamer([]))
     monkeypatch.setattr("flytie.ai.generate_suggestions", _fake_generate)
     runner = CliRunner()
     _init(runner)
@@ -374,19 +364,23 @@ def test_cli_suggest_prints_data_disclosure_notice(
     """The user must be told what leaves their machine before the API call."""
     sample = '[{"name": "Parachute Adams", "hook_size": "14"}]'
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
-    monkeypatch.setattr(
-        "flytie.ai.anthropic_streamer", lambda *a, **k: _fake_streamer([sample])
-    )
+    monkeypatch.setattr("flytie.ai.anthropic_streamer", lambda *a, **k: _fake_streamer([sample]))
     runner = CliRunner()
     _init(runner)
     runner.invoke(
         app,
-        ["add", "Parachute Adams", "--hook", "14", "-s", "rainbow trout",
-         "-m", "grizzly hackle,hackle,1,feather"],
+        [
+            "add",
+            "Parachute Adams",
+            "--hook",
+            "14",
+            "-s",
+            "rainbow trout",
+            "-m",
+            "grizzly hackle,hackle,1,feather",
+        ],
     )
-    r = runner.invoke(
-        app, ["suggest", "--species", "rainbow trout", "--season", "fall"]
-    )
+    r = runner.invoke(app, ["suggest", "--species", "rainbow trout", "--season", "fall"])
     assert r.exit_code == 0, r.stdout + r.stderr
     assert "Anthropic API" in r.stdout
     assert "never sent" in r.stdout

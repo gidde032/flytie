@@ -277,12 +277,7 @@ class ImportResult(BaseModel):
 
     @property
     def total(self) -> int:
-        return (
-            len(self.created)
-            + len(self.overwritten)
-            + len(self.skipped)
-            + len(self.renamed)
-        )
+        return len(self.created) + len(self.overwritten) + len(self.skipped) + len(self.renamed)
 
 
 def _unique_import_name(session: Session, base_name: str) -> str:
@@ -290,9 +285,7 @@ def _unique_import_name(session: Session, base_name: str) -> str:
     candidate = f"{base_name} (imported)"
     counter = 2
     while (
-        session.scalar(
-            select(Pattern.id).where(Pattern.name_key == normalize_name(candidate))
-        )
+        session.scalar(select(Pattern.id).where(Pattern.name_key == normalize_name(candidate)))
         is not None
     ):
         candidate = f"{base_name} (imported {counter})"
@@ -371,9 +364,7 @@ def _create_pattern_from_export(
     # flags none — fall back to the highest version number. parse_document
     # already rejected files that flag more than one.
     current = created_versions[-1]
-    for version, exported_version in zip(
-        created_versions, sorted_versions, strict=True
-    ):
+    for version, exported_version in zip(created_versions, sorted_versions, strict=True):
         if exported_version.is_current:
             current = version
     pattern.current_version_id = current.id
@@ -397,20 +388,15 @@ def import_document(
     """
     if on_conflict not in CONFLICT_MODES:
         raise PortabilityError(
-            f"Unknown conflict mode {on_conflict!r}. "
-            f"Choose one of: {', '.join(CONFLICT_MODES)}."
+            f"Unknown conflict mode {on_conflict!r}. Choose one of: {', '.join(CONFLICT_MODES)}."
         )
     result = ImportResult()
     try:
         for exported in document.patterns:
             name_key = normalize_name(exported.name)
             if not name_key:
-                raise PortabilityError(
-                    "The import file contains a pattern with an empty name."
-                )
-            existing = session.scalar(
-                select(Pattern).where(Pattern.name_key == name_key)
-            )
+                raise PortabilityError("The import file contains a pattern with an empty name.")
+            existing = session.scalar(select(Pattern).where(Pattern.name_key == name_key))
             if existing is None:
                 _create_pattern_from_export(session, exported)
                 result.created.append(exported.name)

@@ -54,9 +54,7 @@ def test_validate_compatibility_rejects_unknown_revision(database: Database) -> 
     # Forge a "future" revision into the DB.
     with database.engine.begin() as conn:
         conn.exec_driver_sql("DELETE FROM alembic_version")
-        conn.exec_driver_sql(
-            "INSERT INTO alembic_version (version_num) VALUES ('ffffffffffff')"
-        )
+        conn.exec_driver_sql("INSERT INTO alembic_version (version_num) VALUES ('ffffffffffff')")
     with pytest.raises(IncompatibleDatabaseError) as exc_info:
         database.validate_compatibility()
     msg = str(exc_info.value)
@@ -83,9 +81,7 @@ def test_open_db_surfaces_incompatibility_as_exit_code_4(
     db.create_schema()
     with db.engine.begin() as conn:
         conn.exec_driver_sql("DELETE FROM alembic_version")
-        conn.exec_driver_sql(
-            "INSERT INTO alembic_version (version_num) VALUES ('deadbeefface')"
-        )
+        conn.exec_driver_sql("INSERT INTO alembic_version (version_num) VALUES ('deadbeefface')")
     db.engine.dispose()
 
     runner = CliRunner()
@@ -113,9 +109,7 @@ def test_info_still_works_against_incompatible_db(
     db.create_schema()
     with db.engine.begin() as conn:
         conn.exec_driver_sql("DELETE FROM alembic_version")
-        conn.exec_driver_sql(
-            "INSERT INTO alembic_version (version_num) VALUES ('decafbad1234')"
-        )
+        conn.exec_driver_sql("INSERT INTO alembic_version (version_num) VALUES ('decafbad1234')")
     db.engine.dispose()
 
     runner = CliRunner()
@@ -159,12 +153,13 @@ def test_info_shows_pattern_and_tag_counts(env_dirs: tuple[Path, Path]) -> None:
     """After adding patterns and tags, info should report the right totals."""
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
-    assert runner.invoke(
-        app, ["add", "Parachute Adams", "--hook", "14", "-t", "dry", "-t", "mayfly"]
-    ).exit_code == 0
-    assert runner.invoke(
-        app, ["add", "Hare's Ear", "--hook", "12", "-t", "nymph"]
-    ).exit_code == 0
+    assert (
+        runner.invoke(
+            app, ["add", "Parachute Adams", "--hook", "14", "-t", "dry", "-t", "mayfly"]
+        ).exit_code
+        == 0
+    )
+    assert runner.invoke(app, ["add", "Hare's Ear", "--hook", "12", "-t", "nymph"]).exit_code == 0
 
     result = runner.invoke(app, ["info"])
     assert result.exit_code == 0, result.stdout + result.stderr
@@ -209,15 +204,15 @@ def test_tag_list_shows_tags_with_counts(env_dirs: tuple[Path, Path]) -> None:
     """Tags in use show up sorted with usage counts."""
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
-    assert runner.invoke(
-        app, ["add", "Adams", "--hook", "14", "-t", "dry", "-t", "mayfly"]
-    ).exit_code == 0
-    assert runner.invoke(
-        app, ["add", "Hare's Ear", "--hook", "12", "-t", "nymph"]
-    ).exit_code == 0
-    assert runner.invoke(
-        app, ["add", "RS2", "--hook", "20", "-t", "nymph", "-t", "midge"]
-    ).exit_code == 0
+    assert (
+        runner.invoke(app, ["add", "Adams", "--hook", "14", "-t", "dry", "-t", "mayfly"]).exit_code
+        == 0
+    )
+    assert runner.invoke(app, ["add", "Hare's Ear", "--hook", "12", "-t", "nymph"]).exit_code == 0
+    assert (
+        runner.invoke(app, ["add", "RS2", "--hook", "20", "-t", "nymph", "-t", "midge"]).exit_code
+        == 0
+    )
 
     result = runner.invoke(app, ["tag", "list"])
     assert result.exit_code == 0, result.stdout + result.stderr
@@ -228,9 +223,7 @@ def test_tag_list_shows_tags_with_counts(env_dirs: tuple[Path, Path]) -> None:
     assert "midge" in out
     assert "nymph" in out
     # And the count for "nymph" (2 patterns) is rendered.
-    assert out.index("dry") < out.index("mayfly") < out.index("midge") < out.index(
-        "nymph"
-    )
+    assert out.index("dry") < out.index("mayfly") < out.index("midge") < out.index("nymph")
 
 
 def test_tag_list_on_empty_library(env_dirs: tuple[Path, Path]) -> None:
@@ -252,9 +245,7 @@ def test_tag_list_ignores_soft_deleted_patterns(
     """
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
-    assert runner.invoke(
-        app, ["add", "Ghost", "--hook", "14", "-t", "obsolete"]
-    ).exit_code == 0
+    assert runner.invoke(app, ["add", "Ghost", "--hook", "14", "-t", "obsolete"]).exit_code == 0
     assert runner.invoke(app, ["delete", "Ghost", "--yes"]).exit_code == 0
 
     result = runner.invoke(app, ["tag", "list"])
@@ -353,7 +344,11 @@ def test_quickstart_advertises_html_on_bare_install() -> None:
     # §1 promotes the core install as sufficient for HTML
     assert "styled, printable HTML" in text or "styled HTML pattern cards" in text
     # §7 notes `--html` works without the [pdf] extra
-    assert "no `[pdf]` extra" in text or "no [pdf] extra" in text or "bare `pip install flytie`" in text
+    assert (
+        "no `[pdf]` extra" in text
+        or "no [pdf] extra" in text
+        or "bare `pip install flytie`" in text
+    )
 
 
 # C7 — Pattern-file-format doc
@@ -454,7 +449,7 @@ def test_spec_search_includes_instructions() -> None:
     text = _read_spec()
     assert "instructions" in text
     # And the FR-3 wording in particular mentions instructions.
-    fr3 = text[text.find("### FR-3"):text.find("### FR-4")]
+    fr3 = text[text.find("### FR-3") : text.find("### FR-4")]
     assert "instructions" in fr3
 
 

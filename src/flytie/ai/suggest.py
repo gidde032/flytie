@@ -131,9 +131,7 @@ def _grounding_block(patterns: list[PatternDTO]) -> str:
     return "\n".join(lines)
 
 
-def build_prompt(
-    request: SuggestionRequest, grounding: list[PatternDTO]
-) -> tuple[str, str]:
+def build_prompt(request: SuggestionRequest, grounding: list[PatternDTO]) -> tuple[str, str]:
     """Return the (system_prompt, user_prompt) pair for a suggestion request."""
     system = (
         "You are an expert fly fishing guide and fly tier helping someone choose "
@@ -162,9 +160,7 @@ def build_prompt(
     parts.append("The user's existing pattern library:")
     parts.append(_grounding_block(grounding))
     parts.append("")
-    parts.append(
-        f"Recommend {request.count} flies as a JSON array following the schema above."
-    )
+    parts.append(f"Recommend {request.count} flies as a JSON array following the schema above.")
     return system, "\n".join(parts)
 
 
@@ -277,8 +273,7 @@ def _require_anthropic() -> object:
         import anthropic
     except ImportError as exc:  # pragma: no cover
         raise AIDependencyError(
-            "AI suggestions need the optional 'ai' extra. "
-            "Install with: pip install 'flytie[ai]'"
+            "AI suggestions need the optional 'ai' extra. Install with: pip install 'flytie[ai]'"
         ) from exc
     return anthropic
 
@@ -296,15 +291,9 @@ def _status_error_message(exc: object) -> str:
             "Check that ANTHROPIC_API_KEY is set to a valid key."
         )
     if code == 429:
-        return (
-            "The Anthropic API rate limit was exceeded (HTTP 429). "
-            "Wait a moment and try again."
-        )
+        return "The Anthropic API rate limit was exceeded (HTTP 429). Wait a moment and try again."
     if code == 529:
-        return (
-            "The Anthropic API is temporarily overloaded (HTTP 529). "
-            "Please try again shortly."
-        )
+        return "The Anthropic API is temporarily overloaded (HTTP 529). Please try again shortly."
     return (
         f"The Anthropic API rejected the request (HTTP {code}). "
         "Check that your ANTHROPIC_API_KEY is valid and has available credit."
@@ -346,15 +335,12 @@ def anthropic_streamer(api_key: str, model: str = DEFAULT_MODEL) -> Streamer:
                 "Could not reach the Anthropic API — check your network connection."
             ) from exc
         except anthropic.AnthropicError as exc:  # type: ignore[attr-defined]
-            raise AIError(
-                "The Anthropic API request failed. Please try again."
-            ) from exc
+            raise AIError("The Anthropic API request failed. Please try again.") from exc
         except Exception as exc:
             # Defensive catch-all: no unexpected error (transport bug, malformed
             # SSE event, etc.) may escape as a raw traceback.
             raise AIError(
-                "Unexpected error while talking to the Anthropic API. "
-                "Please try again."
+                "Unexpected error while talking to the Anthropic API. Please try again."
             ) from exc
 
     return _stream

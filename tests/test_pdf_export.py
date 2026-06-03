@@ -51,9 +51,15 @@ def _seed_adams(session) -> None:  # type: ignore[no-untyped-def]
             tags=["dryfly", "classic"],
             species=["rainbow trout", "brown trout"],
             materials=[
-                MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"),
-                MaterialLineDTO(canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"),
-                MaterialLineDTO(canonical_name="calf body hair", category="wing", quantity=1, unit="clump"),
+                MaterialLineDTO(
+                    canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"
+                ),
+                MaterialLineDTO(
+                    canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"
+                ),
+                MaterialLineDTO(
+                    canonical_name="calf body hair", category="wing", quantity=1, unit="clump"
+                ),
             ],
         ),
     )
@@ -81,9 +87,7 @@ def test_render_html_escapes_special_chars(session) -> None:  # type: ignore[no-
         PatternInput(
             name="<script>alert(1)</script>",
             hook_size="14",
-            materials=[
-                MaterialLineDTO(canonical_name="bead <head>", category="bead", quantity=1)
-            ],
+            materials=[MaterialLineDTO(canonical_name="bead <head>", category="bead", quantity=1)],
         ),
     )
     p = patterns_repo.get_pattern(session, "<script>alert(1)</script>")
@@ -122,7 +126,9 @@ def test_render_pdf_pattern_without_difficulty(session, tmp_path: Path) -> None:
         PatternInput(
             name="Zebra Midge",
             hook_size="20",
-            materials=[MaterialLineDTO(canonical_name="black thread", category="thread", quantity=1)],
+            materials=[
+                MaterialLineDTO(canonical_name="black thread", category="thread", quantity=1)
+            ],
         ),
     )
     p = patterns_repo.get_pattern(session, "Zebra Midge")
@@ -210,7 +216,11 @@ def test_default_filename_is_safe() -> None:
 
     v = PatternVersionDTO(version_number=3, hook_size="14", created_at=datetime.now())
     dto = PatternDTO(
-        id=1, name="Adams / Catskill (#14)", created_at=datetime.now(), updated_at=datetime.now(), current_version=v
+        id=1,
+        name="Adams / Catskill (#14)",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        current_version=v,
     )
     name = default_filename(dto)
     # No slashes, no parens, no hashes — safe for any filesystem.
@@ -224,6 +234,7 @@ def test_html_embeds_photo_as_data_uri(session, tmp_path: Path) -> None:  # type
     _seed_adams(session)
     # Smallest valid PNG (1x1 transparent).
     import base64
+
     png = base64.b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkAAIAAAoAAv/lxKUAAAAASUVORK5CYII="
     )

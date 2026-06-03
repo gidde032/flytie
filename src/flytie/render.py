@@ -203,8 +203,7 @@ def shopping_list_as_text(shopping_list: ShoppingList) -> str:
             unit_str = f" {item.unit}" if item.unit else ""
             qty_section = f"{qty_str}{unit_str}".strip()
             lines.append(
-                f"  - {item.canonical_name}"
-                + (f"  ({qty_section})" if qty_section else "")
+                f"  - {item.canonical_name}" + (f"  ({qty_section})" if qty_section else "")
             )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
@@ -227,8 +226,7 @@ def render_suggestions(console: Console, result: SuggestionResult) -> None:
 
     if not result.suggestions:
         console.print(
-            "[yellow]Could not parse structured suggestions from the model. "
-            "Raw response:[/yellow]"
+            "[yellow]Could not parse structured suggestions from the model. Raw response:[/yellow]"
         )
         console.print(Panel(result.raw_text or "(empty response)", border_style="yellow"))
         return
@@ -236,11 +234,7 @@ def render_suggestions(console: Console, result: SuggestionResult) -> None:
     for i, s in enumerate(result.suggestions, 1):
         # Brackets are escaped (\[) so Rich renders them literally rather than
         # treating "[NEW]" / "[in library]" as markup tags.
-        badge = (
-            r"[dim]\[in library][/dim]"
-            if s.is_existing
-            else r"[bold green]\[NEW][/bold green]"
-        )
+        badge = r"[dim]\[in library][/dim]" if s.is_existing else r"[bold green]\[NEW][/bold green]"
         title = f"{i}. {s.name}  {badge}"
         body_lines: list[str] = []
         if s.hook_size:

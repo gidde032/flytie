@@ -76,9 +76,7 @@ def test_add_cli_hook_overrides_file_when_explicit(
     assert "18" in r.stdout
 
 
-def test_edit_from_file_layers_cli_overrides(
-    env_dirs: tuple[Path, Path], tmp_path: Path
-) -> None:
+def test_edit_from_file_layers_cli_overrides(env_dirs: tuple[Path, Path], tmp_path: Path) -> None:
     """Reviewer A & B (HIGH): edit --from-file must let other CLI flags layer on top."""
     runner = CliRunner()
     _init(runner)
@@ -179,9 +177,7 @@ def test_missing_pattern_file_friendly_error(env_dirs: tuple[Path, Path], tmp_pa
     assert "not found" in (r.stdout + r.stderr).lower()
 
 
-def test_pydantic_validation_friendly_error(
-    env_dirs: tuple[Path, Path], tmp_path: Path
-) -> None:
+def test_pydantic_validation_friendly_error(env_dirs: tuple[Path, Path], tmp_path: Path) -> None:
     """Reviewer A (MED): bad field types should surface as a structured error,
     not a Pydantic ValidationError stacktrace."""
     runner = CliRunner()
@@ -195,9 +191,7 @@ def test_pydantic_validation_friendly_error(
     assert "Traceback" not in out
 
 
-def test_unsupported_pattern_file_extension(
-    env_dirs: tuple[Path, Path], tmp_path: Path
-) -> None:
+def test_unsupported_pattern_file_extension(env_dirs: tuple[Path, Path], tmp_path: Path) -> None:
     runner = CliRunner()
     _init(runner)
     f = tmp_path / "p.yaml"

@@ -18,21 +18,31 @@ def _seed_two(runner: CliRunner) -> None:
     runner.invoke(
         app,
         [
-            "add", "Adams",
-            "--hook", "14",
-            "--tag", "dryfly",
-            "--material", "grizzly hackle,hackle,1,feather",
-            "--material", "grey dubbing,dubbing,1,pinch",
+            "add",
+            "Adams",
+            "--hook",
+            "14",
+            "--tag",
+            "dryfly",
+            "--material",
+            "grizzly hackle,hackle,1,feather",
+            "--material",
+            "grey dubbing,dubbing,1,pinch",
         ],
     )
     runner.invoke(
         app,
         [
-            "add", "Royal Wulff",
-            "--hook", "12",
-            "--tag", "dryfly",
-            "--material", "grizzly hackle,hackle,2,feather",
-            "--material", "red floss,body,1,spool",
+            "add",
+            "Royal Wulff",
+            "--hook",
+            "12",
+            "--tag",
+            "dryfly",
+            "--material",
+            "grizzly hackle,hackle,2,feather",
+            "--material",
+            "red floss,body,1,spool",
         ],
     )
 
@@ -87,12 +97,8 @@ def test_diff_versions(env_dirs: tuple[Path, Path]) -> None:
 def test_diff_identical(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
     _init(runner)
-    runner.invoke(
-        app, ["add", "Adams", "--hook", "14", "--material", "hackle,hackle,1,feather"]
-    )
-    runner.invoke(
-        app, ["edit", "Adams", "--material", "hackle,hackle,1,feather", "--hook", "14"]
-    )
+    runner.invoke(app, ["add", "Adams", "--hook", "14", "--material", "hackle,hackle,1,feather"])
+    runner.invoke(app, ["edit", "Adams", "--material", "hackle,hackle,1,feather", "--hook", "14"])
     r = runner.invoke(app, ["diff", "Adams", "1", "2"])
     assert r.exit_code == 0
     assert "No differences" in r.stdout
@@ -101,9 +107,7 @@ def test_diff_identical(env_dirs: tuple[Path, Path]) -> None:
 def test_restore_old_version(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
     _init(runner)
-    runner.invoke(
-        app, ["add", "Adams", "--hook", "14", "--material", "hackle,hackle,1,feather"]
-    )
+    runner.invoke(app, ["add", "Adams", "--hook", "14", "--material", "hackle,hackle,1,feather"])
     runner.invoke(app, ["edit", "Adams", "--hook", "12"])
     r = runner.invoke(app, ["restore", "Adams", "1"])
     assert r.exit_code == 0
@@ -157,9 +161,7 @@ def test_shop_exclude_owned(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
     _init(runner)
     _seed_two(runner)
-    r = runner.invoke(
-        app, ["shop", "--tag", "dryfly", "--exclude", "grizzly hackle"]
-    )
+    r = runner.invoke(app, ["shop", "--tag", "dryfly", "--exclude", "grizzly hackle"])
     assert r.exit_code == 0
     assert "grizzly hackle" not in r.stdout
     assert "red floss" in r.stdout

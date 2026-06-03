@@ -26,15 +26,27 @@ def _init_and_add(runner: CliRunner) -> None:
     assert r.exit_code == 0
     r = runner.invoke(
         app,
-        ["add", "Parachute Adams", "--hook", "14", "-t", "dryfly",
-         "-m", "grizzly hackle,hackle,1,feather",
-         "-m", "grey dubbing,dubbing,1,pinch",
-         "--notes", "Catskill classic."],
+        [
+            "add",
+            "Parachute Adams",
+            "--hook",
+            "14",
+            "-t",
+            "dryfly",
+            "-m",
+            "grizzly hackle,hackle,1,feather",
+            "-m",
+            "grey dubbing,dubbing,1,pinch",
+            "--notes",
+            "Catskill classic.",
+        ],
     )
     assert r.exit_code == 0
 
 
-def test_export_writes_pdf_to_default_location(env_dirs: tuple[Path, Path], tmp_path: Path, monkeypatch) -> None:
+def test_export_writes_pdf_to_default_location(
+    env_dirs: tuple[Path, Path], tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.chdir(tmp_path)
     runner = CliRunner()
     _init_and_add(runner)
@@ -86,7 +98,9 @@ def test_export_unknown_pattern(env_dirs: tuple[Path, Path]) -> None:
     assert "No pattern" in (r.stdout + r.stderr)
 
 
-def test_export_missing_template_friendly_error(env_dirs: tuple[Path, Path], tmp_path: Path) -> None:
+def test_export_missing_template_friendly_error(
+    env_dirs: tuple[Path, Path], tmp_path: Path
+) -> None:
     runner = CliRunner()
     _init_and_add(runner)
     r = runner.invoke(

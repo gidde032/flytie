@@ -32,13 +32,9 @@ def _pattern(name: str, hook: str = "14", materials: list[str] | None = None) ->
         version_number=1,
         hook_size=hook,
         created_at=now,
-        materials=[
-            MaterialLineDTO(canonical_name=m, category="other") for m in (materials or [])
-        ],
+        materials=[MaterialLineDTO(canonical_name=m, category="other") for m in (materials or [])],
     )
-    return PatternDTO(
-        id=1, name=name, created_at=now, updated_at=now, current_version=version
-    )
+    return PatternDTO(id=1, name=name, created_at=now, updated_at=now, current_version=version)
 
 
 def _fake_streamer(chunks: list[str]):
@@ -65,8 +61,11 @@ _SAMPLE_JSON = (
 
 def test_build_prompt_includes_all_request_fields() -> None:
     req = SuggestionRequest(
-        species="rainbow trout", season="late October",
-        water="Henry's Fork", conditions="low and clear", count=4,
+        species="rainbow trout",
+        season="late October",
+        water="Henry's Fork",
+        conditions="low and clear",
+        count=4,
     )
     system, user = build_prompt(req, [])
     assert "JSON array" in system
@@ -105,7 +104,9 @@ def test_grounding_block_excludes_instructions_and_notes() -> None:
     """Privacy: instructions/notes must never reach the prompt."""
     now = datetime(2026, 1, 1)
     version = PatternVersionDTO(
-        version_number=1, hook_size="14", created_at=now,
+        version_number=1,
+        hook_size="14",
+        created_at=now,
         instructions="SECRET-INSTRUCTIONS-TEXT",
         notes="SECRET-NOTES-TEXT",
         materials=[MaterialLineDTO(canonical_name="thread", category="thread")],

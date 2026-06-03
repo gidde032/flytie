@@ -32,7 +32,9 @@ from flytie.models import (
 # --- helpers ------------------------------------------------------------------
 
 
-def get_or_create_material(session: Session, canonical_name: str, category: str = "other") -> Material:
+def get_or_create_material(
+    session: Session, canonical_name: str, category: str = "other"
+) -> Material:
     """Return the existing material with this canonical name, or create one.
 
     Public since v0.1.1 (Phase 6): the JSON import code in
@@ -124,7 +126,9 @@ def _to_pattern_dto(pattern: Pattern) -> PatternDTO:
         updated_at=pattern.updated_at,
         tags=[t.name for t in pattern.tags],
         species=[s.name for s in pattern.species],
-        current_version=_to_version_dto(pattern.current_version) if pattern.current_version else None,
+        current_version=_to_version_dto(pattern.current_version)
+        if pattern.current_version
+        else None,
     )
 
 
@@ -146,8 +150,12 @@ def get_pattern(session: Session, name: str, include_deleted: bool = False) -> P
         .options(
             selectinload(Pattern.tags),
             selectinload(Pattern.species),
-            selectinload(Pattern.versions).selectinload(PatternVersion.materials).selectinload(PatternMaterial.material),
-            selectinload(Pattern.current_version).selectinload(PatternVersion.materials).selectinload(PatternMaterial.material),
+            selectinload(Pattern.versions)
+            .selectinload(PatternVersion.materials)
+            .selectinload(PatternMaterial.material),
+            selectinload(Pattern.current_version)
+            .selectinload(PatternVersion.materials)
+            .selectinload(PatternMaterial.material),
         )
         .where(Pattern.name_key == key)
     )
@@ -204,7 +212,9 @@ def list_patterns(
     stmt = select(Pattern).options(
         selectinload(Pattern.tags),
         selectinload(Pattern.species),
-        selectinload(Pattern.current_version).selectinload(PatternVersion.materials).selectinload(PatternMaterial.material),
+        selectinload(Pattern.current_version)
+        .selectinload(PatternVersion.materials)
+        .selectinload(PatternMaterial.material),
     )
     if not include_deleted:
         stmt = stmt.where(Pattern.is_deleted.is_(False))
@@ -248,9 +258,7 @@ def search_patterns(session: Session, query: str) -> list[Pattern]:
                 Pattern.current_version.has(PatternVersion.notes.ilike(q, escape="\\")),
                 Pattern.current_version.has(
                     PatternVersion.materials.any(
-                        PatternMaterial.material.has(
-                            Material.canonical_name.like(q, escape="\\")
-                        )
+                        PatternMaterial.material.has(Material.canonical_name.like(q, escape="\\"))
                     )
                 ),
             )
@@ -396,7 +404,9 @@ def to_version_dto(version: PatternVersion) -> PatternVersionDTO:
 # --- internal sync helpers ----------------------------------------------------
 
 
-def _attach_materials(session: Session, version: PatternVersion, lines: Iterable[MaterialLineDTO]) -> None:
+def _attach_materials(
+    session: Session, version: PatternVersion, lines: Iterable[MaterialLineDTO]
+) -> None:
     for pos, line in enumerate(lines):
         material = get_or_create_material(session, line.canonical_name, line.category)
         pm = PatternMaterial(

@@ -18,8 +18,12 @@ def _seed(session) -> None:  # type: ignore[no-untyped-def]
             instructions="Classic Catskill: tail, body, hackle.",
             notes="Tied 1922.",
             materials=[
-                MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"),
-                MaterialLineDTO(canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"),
+                MaterialLineDTO(
+                    canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"
+                ),
+                MaterialLineDTO(
+                    canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"
+                ),
             ],
         ),
     )
@@ -44,9 +48,7 @@ def test_edit_then_list_returns_both(session) -> None:  # type: ignore[no-untype
 
 def test_get_version_returns_specific(session) -> None:  # type: ignore[no-untyped-def]
     _seed(session)
-    patterns_repo.edit_pattern(
-        session, "Adams", PatternInput(name="Adams", hook_size="12")
-    )
+    patterns_repo.edit_pattern(session, "Adams", PatternInput(name="Adams", hook_size="12"))
     v1 = versions_repo.get_version(session, "Adams", 1)
     v2 = versions_repo.get_version(session, "Adams", 2)
     assert v1.hook_size == "14"
@@ -61,9 +63,7 @@ def test_get_version_unknown_raises(session) -> None:  # type: ignore[no-untyped
 
 def test_diff_shows_hook_change(session) -> None:  # type: ignore[no-untyped-def]
     _seed(session)
-    patterns_repo.edit_pattern(
-        session, "Adams", PatternInput(name="Adams", hook_size="12")
-    )
+    patterns_repo.edit_pattern(session, "Adams", PatternInput(name="Adams", hook_size="12"))
     _, _, diff = versions_repo.diff_versions(session, "Adams", 1, 2)
     text = "\n".join(diff)
     assert "hook_size: 14" in text
@@ -83,8 +83,12 @@ def test_diff_identical_versions_is_empty(session) -> None:  # type: ignore[no-u
             instructions="Classic Catskill: tail, body, hackle.",
             notes="Tied 1922.",
             materials=[
-                MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"),
-                MaterialLineDTO(canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"),
+                MaterialLineDTO(
+                    canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"
+                ),
+                MaterialLineDTO(
+                    canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"
+                ),
             ],
         ),
     )

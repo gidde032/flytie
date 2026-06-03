@@ -51,14 +51,20 @@ class Base(DeclarativeBase):
 
 class PatternTag(Base):
     __tablename__ = "pattern_tags"
-    pattern_id: Mapped[int] = mapped_column(ForeignKey("patterns.id", ondelete="CASCADE"), primary_key=True)
+    pattern_id: Mapped[int] = mapped_column(
+        ForeignKey("patterns.id", ondelete="CASCADE"), primary_key=True
+    )
     tag_id: Mapped[int] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
 
 
 class PatternSpecies(Base):
     __tablename__ = "pattern_species"
-    pattern_id: Mapped[int] = mapped_column(ForeignKey("patterns.id", ondelete="CASCADE"), primary_key=True)
-    species_id: Mapped[int] = mapped_column(ForeignKey("species.id", ondelete="CASCADE"), primary_key=True)
+    pattern_id: Mapped[int] = mapped_column(
+        ForeignKey("patterns.id", ondelete="CASCADE"), primary_key=True
+    )
+    species_id: Mapped[int] = mapped_column(
+        ForeignKey("species.id", ondelete="CASCADE"), primary_key=True
+    )
 
 
 # --- Core entities ------------------------------------------------------------
@@ -72,14 +78,22 @@ class Pattern(Base):
     name_key: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
     name_display: Mapped[str] = mapped_column(String(200), nullable=False)
     current_version_id: Mapped[int | None] = mapped_column(
-        ForeignKey("pattern_versions.id", ondelete="SET NULL", use_alter=True, name="fk_pattern_current_version"),
+        ForeignKey(
+            "pattern_versions.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_pattern_current_version",
+        ),
         nullable=True,
     )
     is_deleted: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=false(), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow, server_default=text("CURRENT_TIMESTAMP"), nullable=False
+        DateTime(timezone=True),
+        default=_utcnow,
+        server_default=text("CURRENT_TIMESTAMP"),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -156,7 +170,9 @@ class Material(Base):
     __tablename__ = "materials"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    canonical_name: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
+    canonical_name: Mapped[str] = mapped_column(
+        String(200), unique=True, nullable=False, index=True
+    )
     category: Mapped[str] = mapped_column(String(50), default="other", nullable=False)
     default_unit: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
@@ -166,9 +182,7 @@ class Material(Base):
 
 class PatternMaterial(Base):
     __tablename__ = "pattern_materials"
-    __table_args__ = (
-        Index("ix_pattern_materials_version_id", "pattern_version_id"),
-    )
+    __table_args__ = (Index("ix_pattern_materials_version_id", "pattern_version_id"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     pattern_version_id: Mapped[int] = mapped_column(

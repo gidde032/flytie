@@ -80,9 +80,8 @@ def test_create_schema_repairs_stamped_but_empty_database(settings) -> None:
         # The repaired schema is actually usable end-to-end.
         with db.session() as s:
             from flytie.core.dto import PatternInput
-            patterns_repo.create_pattern(
-                s, PatternInput(name="Smoke Test", hook_size="14")
-            )
+
+            patterns_repo.create_pattern(s, PatternInput(name="Smoke Test", hook_size="14"))
         with db.session() as s:
             assert patterns_repo.get_pattern(s, "Smoke Test") is not None
     finally:
@@ -93,6 +92,7 @@ def test_init_repairs_corrupt_db_without_force(env_dirs) -> None:
     """`flytie init` on a stamped-but-empty DB must repair, not refuse."""
     # Set up the corrupt state out-of-band (no `init` yet).
     from flytie.config import load_settings
+
     settings = load_settings()
     db = Database.from_settings(settings)
     db.stamp_alembic_head()
@@ -154,9 +154,7 @@ def _minimal_document(*patterns: dict) -> str:
 
 def test_parse_document_rejects_duplicate_pattern_names() -> None:
     """parse_document rejects two patterns with the same (case-insensitive) name."""
-    raw = _minimal_document(
-        _minimal_pattern("Zebra Midge"), _minimal_pattern("ZEBRA MIDGE")
-    )
+    raw = _minimal_document(_minimal_pattern("Zebra Midge"), _minimal_pattern("ZEBRA MIDGE"))
     with pytest.raises(PortabilityError) as exc_info:
         parse_document(raw)
     assert "same name" in str(exc_info.value).lower()
@@ -164,9 +162,7 @@ def test_parse_document_rejects_duplicate_pattern_names() -> None:
 
 def test_parse_document_accepts_distinct_names() -> None:
     """Sanity: an otherwise-valid file with unique names still parses."""
-    raw = _minimal_document(
-        _minimal_pattern("Zebra Midge"), _minimal_pattern("Hare's Ear")
-    )
+    raw = _minimal_document(_minimal_pattern("Zebra Midge"), _minimal_pattern("Hare's Ear"))
     doc = parse_document(raw)
     assert isinstance(doc, ExportDocument)
     assert {p.name for p in doc.patterns} == {"Zebra Midge", "Hare's Ear"}
@@ -180,15 +176,11 @@ def test_import_db_does_not_double_apply_duplicates(env_dirs, tmp_path) -> None:
     """
     runner = CliRunner()
     assert runner.invoke(app, ["init"]).exit_code == 0
-    payload = _minimal_document(
-        _minimal_pattern("Zebra Midge"), _minimal_pattern("Zebra Midge")
-    )
+    payload = _minimal_document(_minimal_pattern("Zebra Midge"), _minimal_pattern("Zebra Midge"))
     import_file = tmp_path / "dup.json"
     import_file.write_text(payload)
 
-    result = runner.invoke(
-        app, ["import-db", str(import_file), "--on-conflict", "overwrite"]
-    )
+    result = runner.invoke(app, ["import-db", str(import_file), "--on-conflict", "overwrite"])
     assert result.exit_code == 2
     # Library was not partially mutated.
     listing = runner.invoke(app, ["list"])
@@ -231,13 +223,17 @@ def test_parse_document_rejects_multiple_is_current() -> None:
         "name": "Two-Current",
         "versions": [
             {
-                "version_number": 1, "hook_size": "14",
-                "created_at": "2026-01-01T00:00:00", "is_current": True,
+                "version_number": 1,
+                "hook_size": "14",
+                "created_at": "2026-01-01T00:00:00",
+                "is_current": True,
                 "materials": [],
             },
             {
-                "version_number": 2, "hook_size": "16",
-                "created_at": "2026-02-01T00:00:00", "is_current": True,
+                "version_number": 2,
+                "hook_size": "16",
+                "created_at": "2026-02-01T00:00:00",
+                "is_current": True,
                 "materials": [],
             },
         ],
@@ -301,17 +297,20 @@ def test_underscore_aliases_still_resolve() -> None:
 
 def _add_simple_pattern(runner: CliRunner) -> None:
     assert runner.invoke(app, ["init"]).exit_code == 0
-    assert runner.invoke(
-        app,
-        ["add", "Adams", "--hook", "14",
-         "-m", "grizzly hackle,hackle,1,feather"],
-    ).exit_code == 0
+    assert (
+        runner.invoke(
+            app,
+            ["add", "Adams", "--hook", "14", "-m", "grizzly hackle,hackle,1,feather"],
+        ).exit_code
+        == 0
+    )
 
 
 _HAS_WEASYPRINT: bool
 try:  # pragma: no cover - environment-dependent
     import jinja2  # noqa: F401
     import weasyprint  # noqa: F401
+
     _HAS_WEASYPRINT = True
 except (ImportError, OSError):
     _HAS_WEASYPRINT = False
@@ -381,7 +380,7 @@ def test_pyproject_uses_dynamic_version() -> None:
     cfg = _read_pyproject()
     project = cfg.get("project", {})
     assert "version" in project.get("dynamic", []), (
-        "expected `dynamic = [\"version\", ...]` so the package version has a "
+        'expected `dynamic = ["version", ...]` so the package version has a '
         "single source of truth in src/flytie/__init__.py"
     )
     assert "version" not in project, (
@@ -412,6 +411,7 @@ def test_pyproject_uses_pep639_license() -> None:
 def test_runtime_version_matches_pyproject_source() -> None:
     """`__version__` is parseable and present at the path declared in pyproject."""
     from flytie import __version__
+
     assert __version__, "runtime __version__ must be a non-empty string"
     # Walking the dynamic source path is what the release.yml check does too.
     init_text = (_project_root() / "src" / "flytie" / "__init__.py").read_text()
@@ -510,6 +510,7 @@ def test_json_schema_documents_new_rejection_rules() -> None:
 def test_cli_version_flag_matches_package_version() -> None:
     """`flytie --version` reads the same string the wheel will ship."""
     from flytie import __version__
+
     runner = CliRunner()
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0

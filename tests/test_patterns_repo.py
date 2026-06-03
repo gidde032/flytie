@@ -17,8 +17,12 @@ def _payload(name: str = "Adams", hook: str = "14") -> PatternInput:
         tags=["dryfly", "classic"],
         species=["rainbow trout"],
         materials=[
-            MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"),
-            MaterialLineDTO(canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"),
+            MaterialLineDTO(
+                canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"
+            ),
+            MaterialLineDTO(
+                canonical_name="grey dubbing", category="dubbing", quantity=1, unit="pinch"
+            ),
         ],
     )
 
@@ -51,7 +55,9 @@ def test_edit_pattern_creates_new_version_preserving_old(session) -> None:  # ty
             tags=["dryfly"],
             species=["rainbow trout"],
             materials=[
-                MaterialLineDTO(canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"),
+                MaterialLineDTO(
+                    canonical_name="grizzly hackle", category="hackle", quantity=1, unit="feather"
+                ),
             ],
         ),
     )

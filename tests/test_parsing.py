@@ -75,7 +75,7 @@ def test_load_pattern_toml(tmp_path: Path) -> None:
     f = tmp_path / "p.toml"
     f.write_text(
         'name = "Adams"\nhook_size = "14"\n'
-        "[[materials]]\ncanonical_name = \"hackle\"\ncategory = \"hackle\"\n"
+        '[[materials]]\ncanonical_name = "hackle"\ncategory = "hackle"\n'
     )
     p = load_pattern_file(f)
     assert p.name == "Adams"

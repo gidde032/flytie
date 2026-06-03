@@ -178,9 +178,7 @@ def test_parse_document_rejects_newer_format_version() -> None:
 
 
 def test_import_creates_patterns_in_empty_db(database: Database) -> None:
-    doc = ExportDocument(
-        patterns=[ExportPattern(name="Adams", versions=[_export_version()])]
-    )
+    doc = ExportDocument(patterns=[ExportPattern(name="Adams", versions=[_export_version()])])
     with database.session() as s:
         result = import_document(s, doc)
     assert result.created == ["Adams"]
@@ -195,9 +193,7 @@ def test_import_round_trips_versions_and_timestamps(database: Database) -> None:
             ExportPattern(
                 name="Zebra Midge",
                 versions=[
-                    ExportVersion(
-                        version_number=1, hook_size="20", created_at=original
-                    ),
+                    ExportVersion(version_number=1, hook_size="20", created_at=original),
                     ExportVersion(
                         version_number=2,
                         hook_size="18",
@@ -257,18 +253,13 @@ def test_import_rename_imports_under_a_fresh_name(database: Database) -> None:
     with database.session() as s:
         # Original survives, plus the renamed import.
         assert patterns_repo.get_pattern(s, "Adams").current_version.hook_size == "14"
-        assert (
-            patterns_repo.get_pattern(s, "Adams (imported)").current_version.hook_size
-            == "99"
-        )
+        assert patterns_repo.get_pattern(s, "Adams (imported)").current_version.hook_size == "99"
 
 
 def test_import_rename_handles_repeated_collisions(database: Database) -> None:
     with database.session() as s:
         _add(s, "Adams")
-    doc = ExportDocument(
-        patterns=[ExportPattern(name="Adams", versions=[_export_version()])]
-    )
+    doc = ExportDocument(patterns=[ExportPattern(name="Adams", versions=[_export_version()])])
     with database.session() as s:
         import_document(s, doc, on_conflict="rename")
     with database.session() as s:
@@ -287,9 +278,7 @@ def test_import_unknown_category_raises_portability_error(database: Database) ->
                         hook_size="14",
                         created_at=datetime(2026, 1, 1),
                         materials=[
-                            ExportMaterial(
-                                canonical_name="thingy", category="NOT_A_CATEGORY"
-                            )
+                            ExportMaterial(canonical_name="thingy", category="NOT_A_CATEGORY")
                         ],
                     )
                 ],

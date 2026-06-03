@@ -75,8 +75,11 @@ def _version_callback(value: bool) -> None:
 @app.callback()
 def _root(
     _version: bool = typer.Option(
-        False, "--version", help="Print the flytie version and exit.",
-        callback=_version_callback, is_eager=True,
+        False,
+        "--version",
+        help="Print the flytie version and exit.",
+        callback=_version_callback,
+        is_eager=True,
     ),
 ) -> None:
     """Top-level options."""
@@ -137,7 +140,9 @@ def _load_file_or_exit(path: Path) -> PatternInput:
 
 @app.command()
 def init(
-    force: bool = typer.Option(False, "--force", help="Re-create the schema even if the DB exists."),
+    force: bool = typer.Option(
+        False, "--force", help="Re-create the schema even if the DB exists."
+    ),
 ) -> None:
     """Initialize the local SQLite database for flytie.
 
@@ -200,9 +205,7 @@ def info() -> None:
         with db.session() as s:
             pattern_count = (
                 s.scalar(
-                    select(func.count())
-                    .select_from(Pattern)
-                    .where(Pattern.is_deleted.is_(False))
+                    select(func.count()).select_from(Pattern).where(Pattern.is_deleted.is_(False))
                 )
                 or 0
             )
@@ -297,12 +300,20 @@ def add(
         payload = base.model_copy(update=overrides)
     else:
         if hook is None:
-            raise _fail("--hook with a hook size is required, e.g. '14' for a single size, or '12-16' for a range (flytie add --help).", code=2)
+            raise _fail(
+                "--hook with a hook size is required, e.g. '14' for a single size, or '12-16' for a range (flytie add --help).",
+                code=2,
+            )
         materials = _parse_materials_or_exit(material)
         payload = _build_pattern_input(
-            name=name, hook_size=hook, difficulty=difficulty,
-            instructions=instructions, notes=notes,
-            tags=tag or [], species=species or [], materials=materials,
+            name=name,
+            hook_size=hook,
+            difficulty=difficulty,
+            instructions=instructions,
+            notes=notes,
+            tags=tag or [],
+            species=species or [],
+            materials=materials,
         )
 
     db = _open_db()
@@ -419,12 +430,22 @@ def restore(
 
 @app.command()
 def shop(
-    pattern: list[str] | None = typer.Option(None, "--pattern", "-p", help="Include this pattern by name."),
-    tag: list[str] | None = typer.Option(None, "--tag", "-t", help="Include every pattern with this tag."),
-    species: list[str] | None = typer.Option(None, "--species", "-s", help="Include every pattern for this target species."),
-    exclude: list[str] | None = typer.Option(None, "--exclude", "-x", help="Drop this material from the shopping list (already owned)."),
+    pattern: list[str] | None = typer.Option(
+        None, "--pattern", "-p", help="Include this pattern by name."
+    ),
+    tag: list[str] | None = typer.Option(
+        None, "--tag", "-t", help="Include every pattern with this tag."
+    ),
+    species: list[str] | None = typer.Option(
+        None, "--species", "-s", help="Include every pattern for this target species."
+    ),
+    exclude: list[str] | None = typer.Option(
+        None, "--exclude", "-x", help="Drop this material from the shopping list (already owned)."
+    ),
     output_format: str = typer.Option(
-        "table", "--format", "-f",
+        "table",
+        "--format",
+        "-f",
         help="Output format: table, markdown, text, or json.",
     ),
 ) -> None:
@@ -440,7 +461,10 @@ def shop(
     db = _open_db()
     with db.session() as s:
         shopping_list = shop_repo.build_shopping_list(
-            s, names=pattern or [], tags=tag or [], species=species or [],
+            s,
+            names=pattern or [],
+            tags=tag or [],
+            species=species or [],
             exclude=exclude or [],
         )
     if not shopping_list.items:
@@ -462,9 +486,7 @@ def suggest(
     season: str = typer.Option(
         ..., "--season", help="Season or time of year, e.g. 'late October' or 'fall'."
     ),
-    water: str | None = typer.Option(
-        None, "--water", help='Water name, e.g. "Henry\'s Fork".'
-    ),
+    water: str | None = typer.Option(None, "--water", help='Water name, e.g. "Henry\'s Fork".'),
     conditions: str | None = typer.Option(
         None, "--conditions", help="Water conditions, e.g. 'low and clear'."
     ),
@@ -517,13 +539,10 @@ def suggest(
                 nonlocal received
                 received += len(chunk)
                 status.update(
-                    f"[cyan]Consulting Claude…[/cyan] "
-                    f"[dim]({received} characters received)[/dim]"
+                    f"[cyan]Consulting Claude…[/cyan] [dim]({received} characters received)[/dim]"
                 )
 
-            result = ai_mod.generate_suggestions(
-                request, grounding, streamer, on_chunk=_on_chunk
-            )
+            result = ai_mod.generate_suggestions(request, grounding, streamer, on_chunk=_on_chunk)
     except ai_mod.AIError as exc:
         raise _fail(str(exc), code=2) from exc
     except KeyboardInterrupt:
@@ -534,12 +553,8 @@ def suggest(
 
 @app.command("export-db")
 def export_db(
-    out: Path = typer.Option(
-        ..., "--out", "-o", help="Path to write the JSON export file."
-    ),
-    tag: str | None = typer.Option(
-        None, "--tag", help="Only export patterns carrying this tag."
-    ),
+    out: Path = typer.Option(..., "--out", "-o", help="Path to write the JSON export file."),
+    tag: str | None = typer.Option(None, "--tag", help="Only export patterns carrying this tag."),
     species: str | None = typer.Option(
         None, "--species", help="Only export patterns for this target species."
     ),
@@ -572,16 +587,12 @@ def export_db(
             f"[yellow]No patterns matched — wrote an empty export to {out_path}.[/yellow]"
         )
     else:
-        console.print(
-            f"[green]Exported {count} pattern(s) to {out_path}.[/green]"
-        )
+        console.print(f"[green]Exported {count} pattern(s) to {out_path}.[/green]")
 
 
 @app.command("import-db")
 def import_db(
-    path: Path = typer.Argument(
-        ..., help="Path to a flytie JSON export file to import."
-    ),
+    path: Path = typer.Argument(..., help="Path to a flytie JSON export file to import."),
     on_conflict: str = typer.Option(
         "skip",
         "--on-conflict",
@@ -650,9 +661,7 @@ def import_db(
     if result.overwritten:
         console.print(f"  overwritten: {len(result.overwritten)}")
     if result.skipped:
-        console.print(
-            f"  skipped (name already exists): {len(result.skipped)}"
-        )
+        console.print(f"  skipped (name already exists): {len(result.skipped)}")
     if result.renamed:
         console.print(f"  renamed to avoid collisions: {len(result.renamed)}")
         for original, new_name in result.renamed.items():
@@ -686,15 +695,33 @@ def _resolve_list_arg(flag_label: str, value: list[str] | None, clear: bool) -> 
 @app.command()
 def edit(
     name: str = typer.Argument(...),
-    hook: str | None = typer.Option(None, "--hook", help="Change hook size or range — e.g. '14' for a single size, or '12-16' for a range."),
-    difficulty: int | None = typer.Option(None, "--difficulty", min=1, max=5, help="Change pattern difficulty (1 easiest, 5 most difficult)."),
-    instructions: str | None = typer.Option(None, "--instructions", help="Change pattern instructions."),
+    hook: str | None = typer.Option(
+        None,
+        "--hook",
+        help="Change hook size or range — e.g. '14' for a single size, or '12-16' for a range.",
+    ),
+    difficulty: int | None = typer.Option(
+        None,
+        "--difficulty",
+        min=1,
+        max=5,
+        help="Change pattern difficulty (1 easiest, 5 most difficult).",
+    ),
+    instructions: str | None = typer.Option(
+        None, "--instructions", help="Change pattern instructions."
+    ),
     notes: str | None = typer.Option(None, "--notes", help="Update pattern notes."),
-    tag: list[str] | None = typer.Option(None, "--tag", "-t",  help="Replace tag list, tags don't carry over."),
+    tag: list[str] | None = typer.Option(
+        None, "--tag", "-t", help="Replace tag list, tags don't carry over."
+    ),
     clear_tags: bool = typer.Option(False, "--clear-tags", help="Clear tag list."),
-    species: list[str] | None = typer.Option(None, "--species", "-s", help="Replace species list, tags don't carry over."),
+    species: list[str] | None = typer.Option(
+        None, "--species", "-s", help="Replace species list, tags don't carry over."
+    ),
     clear_species: bool = typer.Option(False, "--clear-species", help="Clear species list."),
-    material: list[str] | None = typer.Option(None, "--material", "-m", help="Replace material list, materials don't carry over."),
+    material: list[str] | None = typer.Option(
+        None, "--material", "-m", help="Replace material list, materials don't carry over."
+    ),
     clear_materials: bool = typer.Option(False, "--clear-materials", help="Clear material list."),
     rename_to: str | None = typer.Option(None, "--rename-to", help="Rename pattern."),
     from_file: Path | None = typer.Option(
@@ -725,9 +752,14 @@ def edit(
         if current_v is None:
             raise _fail(f"Pattern {name!r} has no current version to edit.", code=1)
         defaults = PatternInput(
-            name=current.name_display, hook_size=current_v.hook_size,
-            difficulty=current_v.difficulty, instructions=current_v.instructions,
-            notes=current_v.notes, tags=None, species=None, materials=None,
+            name=current.name_display,
+            hook_size=current_v.hook_size,
+            difficulty=current_v.difficulty,
+            instructions=current_v.instructions,
+            notes=current_v.notes,
+            tags=None,
+            species=None,
+            materials=None,
         )
         if from_file is not None:
             base = _load_file_or_exit(from_file)
@@ -853,14 +885,14 @@ def tag_remove(
     console.print(f"[green]Untagged[/green] {name}: removed {', '.join(tags)}")
 
 
-
-
 @app.command()
 def export(
     name: str | None = typer.Argument(
         None, help="Pattern name. Omit and use --tag/--species for a batch export."
     ),
-    tag: str | None = typer.Option(None, "--tag", "-t", help="Batch-export every pattern with this tag."),
+    tag: str | None = typer.Option(
+        None, "--tag", "-t", help="Batch-export every pattern with this tag."
+    ),
     species: str | None = typer.Option(
         None, "--species", "-s", help="Batch-export every pattern for this target species."
     ),
@@ -874,11 +906,17 @@ def export(
             "is written. Default: current directory."
         ),
     ),
-    template: Path | None = typer.Option(None, "--template", help="Custom Jinja2 HTML template path."),
+    template: Path | None = typer.Option(
+        None, "--template", help="Custom Jinja2 HTML template path."
+    ),
     css: Path | None = typer.Option(None, "--css", help="Custom CSS stylesheet path."),
-    photo: Path | None = typer.Option(None, "--photo", help="Optional image to embed (single-pattern export only)."),
+    photo: Path | None = typer.Option(
+        None, "--photo", help="Optional image to embed (single-pattern export only)."
+    ),
     html_only: bool = typer.Option(
-        False, "--html", help="Render styled HTML to stdout instead of PDF (single pattern; no WeasyPrint needed)."
+        False,
+        "--html",
+        help="Render styled HTML to stdout instead of PDF (single pattern; no WeasyPrint needed).",
     ),
 ) -> None:
     """Export a pattern as a printable PDF card, or batch-export many.
@@ -906,7 +944,9 @@ def export(
 
     batch = name is None
     if batch and html_only:
-        raise _fail("--html renders one pattern to stdout; it can't be combined with batch export.", code=2)
+        raise _fail(
+            "--html renders one pattern to stdout; it can't be combined with batch export.", code=2
+        )
     if batch and photo is not None:
         raise _fail("--photo applies to a single pattern; omit it for batch export.", code=2)
 
@@ -977,7 +1017,9 @@ def export(
     if len(written_paths) == 1:
         console.print(f"[green]Wrote[/green] {written_paths[0]}")
     else:
-        console.print(f"[green]Wrote {len(written_paths)} cards[/green] to {written_paths[0].parent}")
+        console.print(
+            f"[green]Wrote {len(written_paths)} cards[/green] to {written_paths[0].parent}"
+        )
 
 
 # --- config -----------------------------------------------------------------

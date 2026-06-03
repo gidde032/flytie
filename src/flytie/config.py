@@ -94,7 +94,9 @@ def load_settings() -> Settings:
         data = _read_config_file(config_file)
     db_section = data.get("database", {}) if isinstance(data, dict) else {}
     pdf_section = data.get("pdf", {}) if isinstance(data, dict) else {}
-    db_path = _resolve_db_path(data_dir, db_section.get("path") if isinstance(db_section, dict) else None)
+    db_path = _resolve_db_path(
+        data_dir, db_section.get("path") if isinstance(db_section, dict) else None
+    )
     pdf_template = "default"
     pdf_output_dir: Path | None = None
     if isinstance(pdf_section, dict):

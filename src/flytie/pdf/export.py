@@ -48,8 +48,7 @@ def _require_jinja2() -> object:
         import jinja2
     except ImportError as exc:  # pragma: no cover
         raise PDFDependencyError(
-            "Pattern export needs the optional 'pdf' extra. "
-            "Install with: pip install 'flytie[pdf]'"
+            "Pattern export needs the optional 'pdf' extra. Install with: pip install 'flytie[pdf]'"
         ) from exc
     return jinja2
 
@@ -60,8 +59,7 @@ def _require_weasyprint() -> object:
         import weasyprint
     except ImportError as exc:  # pragma: no cover
         raise PDFDependencyError(
-            "PDF export needs the optional 'pdf' extra. "
-            "Install with: pip install 'flytie[pdf]'"
+            "PDF export needs the optional 'pdf' extra. Install with: pip install 'flytie[pdf]'"
         ) from exc
     except OSError as exc:  # pragma: no cover
         raise PDFDependencyError(_NATIVE_DEP_HINT + f"Original error: {exc}") from exc
@@ -95,9 +93,7 @@ def _photo_data_uri(photo_path: Path | None) -> str | None:
         raise PDFTemplateError(f"Photo not found: {p}")
     mime, _ = mimetypes.guess_type(p.name)
     if mime is None or not mime.startswith("image/"):
-        raise PDFTemplateError(
-            f"Photo {p} doesn't look like an image (mime={mime!r})."
-        )
+        raise PDFTemplateError(f"Photo {p} doesn't look like an image (mime={mime!r}).")
     encoded = base64.b64encode(p.read_bytes()).decode("ascii")
     return f"data:{mime};base64,{encoded}"
 
@@ -115,9 +111,7 @@ def render_pattern_html(
     be opened in any browser and printed from there.
     """
     if pattern.current_version is None:
-        raise PDFTemplateError(
-            f"Pattern {pattern.name!r} has no current version to render."
-        )
+        raise PDFTemplateError(f"Pattern {pattern.name!r} has no current version to render.")
     jinja2 = _require_jinja2()
     Environment = jinja2.Environment  # type: ignore[attr-defined]
     select_autoescape = jinja2.select_autoescape  # type: ignore[attr-defined]

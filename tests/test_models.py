@@ -78,7 +78,9 @@ def test_pattern_version_cascade(database: Database) -> None:
         m = Material(canonical_name="grey thread")
         s.add(m)
         s.flush()
-        pm = PatternMaterial(pattern_version_id=v.id, material_id=m.id, quantity=1, unit="spool", position=0)
+        pm = PatternMaterial(
+            pattern_version_id=v.id, material_id=m.id, quantity=1, unit="spool", position=0
+        )
         s.add(pm)
 
     # Delete the pattern; versions and pattern_materials should disappear.

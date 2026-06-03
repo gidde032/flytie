@@ -42,15 +42,27 @@ def test_shop_dedup_normalizes_units(session) -> None:  # type: ignore[no-untype
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="A", hook_size="14", tags=["x"],
-            materials=[MaterialLineDTO(canonical_name="hackle", category="hackle", quantity=1, unit="Feather")],
+            name="A",
+            hook_size="14",
+            tags=["x"],
+            materials=[
+                MaterialLineDTO(
+                    canonical_name="hackle", category="hackle", quantity=1, unit="Feather"
+                )
+            ],
         ),
     )
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="B", hook_size="14", tags=["x"],
-            materials=[MaterialLineDTO(canonical_name="hackle", category="hackle", quantity=2, unit="feather ")],
+            name="B",
+            hook_size="14",
+            tags=["x"],
+            materials=[
+                MaterialLineDTO(
+                    canonical_name="hackle", category="hackle", quantity=2, unit="feather "
+                )
+            ],
         ),
     )
     sl = shop_repo.build_shopping_list(session, tags=["x"])
@@ -70,8 +82,12 @@ def test_shop_markdown_render_escapes_special_chars(session) -> None:  # type: i
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="A", hook_size="14", tags=["x"],
-            materials=[MaterialLineDTO(canonical_name="*bead* head [#14]", category="bead", quantity=1)],
+            name="A",
+            hook_size="14",
+            tags=["x"],
+            materials=[
+                MaterialLineDTO(canonical_name="*bead* head [#14]", category="bead", quantity=1)
+            ],
         ),
     )
     sl = shop_repo.build_shopping_list(session, tags=["x"])
@@ -87,8 +103,14 @@ def test_shop_json_export_is_valid_json(session) -> None:  # type: ignore[no-unt
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="Adams", hook_size="14", tags=["dryfly"],
-            materials=[MaterialLineDTO(canonical_name="hackle", category="hackle", quantity=1, unit="feather")],
+            name="Adams",
+            hook_size="14",
+            tags=["dryfly"],
+            materials=[
+                MaterialLineDTO(
+                    canonical_name="hackle", category="hackle", quantity=1, unit="feather"
+                )
+            ],
         ),
     )
     sl = shop_repo.build_shopping_list(session, tags=["dryfly"])
@@ -104,13 +126,17 @@ def test_restore_preserves_tags_and_species(session) -> None:  # type: ignore[no
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="Adams", hook_size="14",
-            tags=["dryfly", "classic"], species=["rainbow trout"],
+            name="Adams",
+            hook_size="14",
+            tags=["dryfly", "classic"],
+            species=["rainbow trout"],
             materials=[MaterialLineDTO(canonical_name="hackle", category="hackle", quantity=1)],
         ),
     )
     # Strip tags via edit.
-    patterns_repo.edit_pattern(session, "Adams", PatternInput(name="Adams", hook_size="14", tags=[]))
+    patterns_repo.edit_pattern(
+        session, "Adams", PatternInput(name="Adams", hook_size="14", tags=[])
+    )
     # Now restore v1.
     versions_repo.restore_version(session, "Adams", 1)
     p = patterns_repo.get_pattern(session, "Adams")
@@ -127,7 +153,8 @@ def test_restore_returns_correct_new_version_number(session) -> None:  # type: i
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="Adams", hook_size="14",
+            name="Adams",
+            hook_size="14",
             materials=[MaterialLineDTO(canonical_name="hackle", category="hackle", quantity=1)],
         ),
     )
@@ -146,7 +173,8 @@ def test_diff_with_reordered_materials_shows_changes(session) -> None:  # type: 
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="Adams", hook_size="14",
+            name="Adams",
+            hook_size="14",
             materials=[
                 MaterialLineDTO(canonical_name="thread", category="thread"),
                 MaterialLineDTO(canonical_name="hackle", category="hackle"),
@@ -157,7 +185,8 @@ def test_diff_with_reordered_materials_shows_changes(session) -> None:  # type: 
         session,
         "Adams",
         PatternInput(
-            name="Adams", hook_size="14",
+            name="Adams",
+            hook_size="14",
             materials=[
                 MaterialLineDTO(canonical_name="thread", category="thread"),
                 MaterialLineDTO(canonical_name="dubbing", category="dubbing"),
@@ -177,12 +206,16 @@ def test_difficulty_none_renders_as_na_in_diff(session) -> None:  # type: ignore
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="Adams", hook_size="14", difficulty=None,
+            name="Adams",
+            hook_size="14",
+            difficulty=None,
             materials=[MaterialLineDTO(canonical_name="hackle", category="hackle")],
         ),
     )
     patterns_repo.edit_pattern(
-        session, "Adams", PatternInput(name="Adams", hook_size="14", difficulty=3),
+        session,
+        "Adams",
+        PatternInput(name="Adams", hook_size="14", difficulty=3),
     )
     _, _, lines = versions_repo.diff_versions(session, "Adams", 1, 2)
     text = "\n".join(lines)
@@ -195,7 +228,9 @@ def test_shop_overlapping_selectors_dedups_patterns(session) -> None:  # type: i
     patterns_repo.create_pattern(
         session,
         PatternInput(
-            name="Adams", hook_size="14", tags=["dryfly"],
+            name="Adams",
+            hook_size="14",
+            tags=["dryfly"],
             materials=[MaterialLineDTO(canonical_name="hackle", category="hackle", quantity=1)],
         ),
     )

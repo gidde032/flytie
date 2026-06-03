@@ -44,25 +44,27 @@ def _init(runner: CliRunner) -> None:
 def _add_adams(runner: CliRunner) -> None:
     r = runner.invoke(
         app,
-        ["add", "Parachute Adams", "--hook", "14", "-s", "rainbow trout",
-         "-m", "grizzly hackle,hackle,1,feather"],
+        [
+            "add",
+            "Parachute Adams",
+            "--hook",
+            "14",
+            "-s",
+            "rainbow trout",
+            "-m",
+            "grizzly hackle,hackle,1,feather",
+        ],
     )
     assert r.exit_code == 0, r.stdout
 
 
-def test_suggest_happy_path(
-    env_dirs: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_suggest_happy_path(env_dirs: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
-    monkeypatch.setattr(
-        "flytie.ai.anthropic_streamer", _fake_streamer_factory([_SAMPLE_JSON])
-    )
+    monkeypatch.setattr("flytie.ai.anthropic_streamer", _fake_streamer_factory([_SAMPLE_JSON]))
     runner = CliRunner()
     _init(runner)
     _add_adams(runner)
-    r = runner.invoke(
-        app, ["suggest", "--species", "rainbow trout", "--season", "late October"]
-    )
+    r = runner.invoke(app, ["suggest", "--species", "rainbow trout", "--season", "late October"])
     assert r.exit_code == 0, r.stdout + r.stderr
     assert "Parachute Adams" in r.stdout
     assert "October Caddis" in r.stdout
@@ -77,9 +79,7 @@ def test_suggest_missing_api_key_friendly_error(
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     runner = CliRunner()
     _init(runner)
-    r = runner.invoke(
-        app, ["suggest", "--species", "trout", "--season", "fall"]
-    )
+    r = runner.invoke(app, ["suggest", "--species", "trout", "--season", "fall"])
     assert r.exit_code == 2
     out = r.stdout + r.stderr
     assert "ANTHROPIC_API_KEY" in out
@@ -111,8 +111,17 @@ def test_suggest_passes_water_and_conditions(
     _init(runner)
     r = runner.invoke(
         app,
-        ["suggest", "--species", "brown trout", "--season", "fall",
-         "--water", "Henry's Fork", "--conditions", "low and clear"],
+        [
+            "suggest",
+            "--species",
+            "brown trout",
+            "--season",
+            "fall",
+            "--water",
+            "Henry's Fork",
+            "--conditions",
+            "low and clear",
+        ],
     )
     assert r.exit_code == 0, r.stdout + r.stderr
     assert "Henry's Fork" in seen["user"]

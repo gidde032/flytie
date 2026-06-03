@@ -39,9 +39,7 @@ def upgrade() -> None:
         sa.Column("name_key", sa.String(length=200), nullable=False),
         sa.Column("name_display", sa.String(length=200), nullable=False),
         sa.Column("current_version_id", sa.Integer(), nullable=True),
-        sa.Column(
-            "is_deleted", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("is_deleted", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

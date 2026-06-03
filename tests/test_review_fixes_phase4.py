@@ -26,8 +26,9 @@ def test_require_weasyprint_translates_oserror_to_friendly_message() -> None:
         "cannot load library 'libpango-1.0-0': dlopen(libpango-1.0-0, 0x0002): "
         "tried: 'libpango-1.0-0' (no such file)..."
     )
-    with patch("flytie.pdf.export.importlib", create=True), patch(
-        "builtins.__import__", side_effect=fake_err
+    with (
+        patch("flytie.pdf.export.importlib", create=True),
+        patch("builtins.__import__", side_effect=fake_err),
     ):
         with pytest.raises(PDFDependencyError) as exc:
             _require_weasyprint()
