@@ -1,0 +1,108 @@
+/* flytie default pattern card stylesheet. Override with --css. */
+@page {
+  size: Letter;
+  margin: 0.6in;
+  @bottom-center {
+    content: "flytie — " string(pattern-name);
+    font-family: Helvetica, sans-serif;
+    font-size: 9pt;
+    color: #888;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 11pt;
+  color: #222;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.card-header {
+  border-bottom: 2px solid #333;
+  padding-bottom: 0.4em;
+  margin-bottom: 0.6em;
+}
+.pattern-name {
+  font-size: 26pt;
+  margin: 0;
+  string-set: pattern-name content();
+  color: #1a1a1a;
+}
+.metadata {
+  margin-top: 0.3em;
+  font-size: 11pt;
+  color: #555;
+}
+.metadata > span { margin-right: 1em; }
+.metadata strong { color: #0a3d62; }
+.tags { margin-top: 0.4em; }
+.tag {
+  display: inline-block;
+  background: #e8f1f8;
+  color: #1a4566;
+  padding: 1px 8px;
+  margin-right: 0.3em;
+  border-radius: 3px;
+  font-size: 9.5pt;
+}
+.species { margin-top: 0.3em; font-size: 10.5pt; color: #444; }
+.species-label { color: #777; margin-right: 0.4em; }
+.species-name { font-style: italic; margin-right: 0.6em; }
+
+.photo-frame {
+  text-align: center;
+  margin: 0.6em 0;
+}
+.photo-frame img {
+  max-width: 100%;
+  max-height: 3.5in;
+  border: 1px solid #ccc;
+}
+
+.card-body { display: block; }
+
+section { margin-bottom: 1em; page-break-inside: avoid; }
+section h2 {
+  font-size: 13pt;
+  border-bottom: 1px solid #aaa;
+  padding-bottom: 0.1em;
+  margin-bottom: 0.3em;
+  color: #0a3d62;
+}
+
+.materials table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5pt;
+}
+.materials th, .materials td {
+  padding: 3px 6px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+.materials thead th {
+  border-bottom: 1.5px solid #888;
+  background: #f5f5f5;
+}
+.materials .index { width: 1.5em; color: #999; }
+.materials .qty { text-align: right; }
+.materials .notes { font-style: italic; color: #666; }
+
+.instructions-body, .notes-body {
+  white-space: pre-wrap;
+  font-size: 10.5pt;
+}
+
+.empty { color: #888; font-style: italic; }
+
+.card-footer {
+  margin-top: 1em;
+  padding-top: 0.4em;
+  border-top: 1px solid #aaa;
+  font-size: 9pt;
+  color: #777;
+  display: flex;
+  justify-content: space-between;
+}

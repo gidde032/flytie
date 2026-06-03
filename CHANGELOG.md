@@ -1,0 +1,122 @@
+# Changelog
+
+All notable changes to **flytie** are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+Nothing yet.
+
+## [0.1.1] — 2026-06-02
+
+A hardening release. After a dual-lens audit pass — a prospective-user
+friction log and a fresh spec-drift re-audit — eleven targeted improvements
+were applied across the CLI surface, the docs, the spec, and the safety
+guarantees. No breaking changes; existing scripts and databases keep working.
+
+### Added
+
+- **`flytie info`** — a single diagnostic command that prints the resolved
+  database path, config file path, data directory, current Alembic schema
+  revision, and pattern/tag/species counts. Safe to run before `flytie init`
+  (reports "not initialized") and against an incompatible database (reports
+  the situation rather than failing). The Anthropic API key is never
+  displayed by this command — by design it lives only in the
+  `ANTHROPIC_API_KEY` environment variable and is never written to disk.
+- **`flytie tag list`** — new subcommand under `flytie tag` that lists every
+  tag currently attached to a non-deleted pattern, with per-tag usage counts,
+  so `flytie tag list` and `flytie list --tag <name>` never disagree about
+  what's selectable.
+- **Schema-compatibility safety check** — flytie now refuses to operate
+  against a database whose Alembic revision this build doesn't recognize
+  (typical scenario: user upgraded flytie, ran a migration, then downgraded).
+  Surfaced as a new exit code 4 ("incompatible environment") with a recovery
+  path that names `flytie export-db` on the newer install, then
+  `flytie init --force` and `flytie import-db backup.json` on this one.
+  This makes good on the spec §8 promise that the app refuses to start
+  against a DB newer than its known head. `flytie info` deliberately bypasses
+  the check so it remains usable as a diagnostic when other commands fail.
+- **Pattern file format documentation** — new `docs/pattern-file-format.md`
+  covering the JSON and TOML formats accepted by `flytie add --from-file`
+  and `flytie edit --from-file`, with field tables for both pattern-level
+  and material-object fields and a bulk-loading example. Cross-linked from
+  `commands.md`, `migrating-from-notebook.md`, `index.md`, and the Typer
+  help text on `--from-file` itself.
+
+### Changed
+
+- **`jinja2` is now a core dependency** (moved out of the `[pdf]` extra).
+  `flytie export <name> --html` works on a bare `pip install flytie` — no
+  extras, no native libraries — as the spec FR-5 has always promised. The
+  `[pdf]` extra retains WeasyPrint and its native libpango/Cairo
+  requirement. A core install is now sufficient to produce printable,
+  styled HTML pattern cards that any browser can open and print.
+- **CLI help text is comprehensive.** `flytie add --help` and
+  `flytie edit --help` now describe `--material` (with the
+  `name,category,quantity,unit` mini-grammar and the 13 valid categories
+  inline), `--hook` (with both `14` and `12-16` range examples), `--tag`,
+  and `--species`. `flytie shop --help` describes every selector
+  (`--pattern`, `--tag`, `--species`, `--exclude`), with `--exclude`'s
+  "drop materials you already own" use case called out by name.
+- **`--hook is required` error rewritten.** Running `flytie add <name>`
+  without `--hook` no longer produces the cryptic
+  `--hook is required when --from-file is not supplied.` (which references
+  a flag the user hasn't met). It now reads:
+  *Hook size is required — pass --hook (e.g. --hook 14, or --hook 12-16
+  for a range). Run `flytie add --help` to see every option, including
+  --from-file for loading all fields at once.*
+- **Quickstart §2 path-disambiguation.** The "where does my database live?"
+  step now uses `flytie info` (the new diagnostic) rather than
+  `flytie config path` (which returns the TOML config file location
+  specifically). The same disambiguation flows through `commands.md` and
+  `index.md` so all three docs agree.
+- **Quickstart §6 defines the `?` marker** in shopping-list output at the
+  point where it first appears, rather than burying the definition in the
+  shopping-list cookbook.
+- **Spec backport.** `fly-tying-tracker-spec.md` now reflects the shipped
+  design: flag-driven `add`/`edit` (rather than the original interactive
+  prompt / `$EDITOR` design), JSON/TOML pattern files (rather than the
+  original YAML/JSON), search covering `instructions` in addition to name,
+  materials, and notes, the `Qty` column wording reconciled with the
+  implementation, and the new `flytie info` and `flytie tag list` commands
+  documented.
+
+[Unreleased]: https://github.com/finngidden/flytie/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/finngidden/flytie/compare/v0.1.0...v0.1.1
+
+## [0.1.0] — 2026-05-22
+
+First public release. flytie is a local-first, AI-augmented command-line
+manager for fly tying patterns.
+
+### Added
+
+- **Project setup** — `flytie init` creates a local SQLite database, applying
+  the schema through bundled Alembic migrations so future upgrades migrate
+  cleanly.
+- **Pattern management** — `add`, `list` (with `--tag`, `--species`, and
+  `--hook-size` filters), `view`, `search`, `edit` (with explicit `--rename-to`),
+  `delete` (soft by default, `--hard` to purge), and `tag add` / `tag remove`.
+  Patterns can be supplied inline or loaded from a JSON/TOML file.
+- **Versioning** — every edit appends an immutable version. `versions` lists
+  the history, `view --version N` shows a past version, `diff` compares two,
+  and `restore` brings an old version back as a new one.
+- **Shopping lists** — `shop` aggregates and deduplicates materials across any
+  set of patterns selected by `--pattern`, `--tag`, or `--species`, with
+  `--format markdown|text|json` and `--exclude` for materials already owned.
+- **PDF export** — `export` renders a styled pattern card to PDF via WeasyPrint
+  and a customizable Jinja2/CSS template, single or batch (`--tag`/`--species`).
+  `--html` renders the card without WeasyPrint's native libraries.
+- **AI suggestions** — `suggest` asks the Anthropic Claude API for fly
+  recommendations grounded in the local library, streaming the response. Only
+  pattern names, hook sizes, and material names are sent; the API key is read
+  solely from `ANTHROPIC_API_KEY` and is never written to disk.
+- **Portability** — `export-db` and `import-db` move a pattern library between
+  machines as documented JSON, preserving full version history. Imports are
+  transactional and offer `--on-conflict skip|overwrite|rename`.
+- **Configuration** — `config get/set/path/show` manages user settings in a
+  TOML file; `FLYTIE_CONFIG_DIR`, `FLYTIE_DATA_DIR`, and `FLYTIE_DB_PATH`
+  override resolved locations.
+
+[0.1.0]: https://github.com/finngidden/flytie/releases/tag/v0.1.0

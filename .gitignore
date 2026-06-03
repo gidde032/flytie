@@ -1,0 +1,57 @@
+# --- Python build artifacts ---
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Environment files & secrets ---
+# The Anthropic API key is read only from the ANTHROPIC_API_KEY environment
+# variable and must never be committed. These patterns keep dotenv-style and
+# secret files out of the repository.
+.env
+.env.*
+*.env
+secrets.*
+*.key
+*.pem
+
+# --- Test / lint / type-check caches ---
+.pytest_cache/
+pytest-cache-files-*/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# --- Local flytie data (a user's pattern database is never published) ---
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# --- Internal project documents (not part of the public repository) ---
+# Build-process and agent-handoff notes. Kept locally, never published.
+handoff.md
+spec-drift-audit.md
+phase-summaries/
+
+# --- Editor / OS ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- Misc scratch ---
+*.tmp
+*.bak
