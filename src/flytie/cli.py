@@ -297,13 +297,7 @@ def add(
         payload = base.model_copy(update=overrides)
     else:
         if hook is None:
-            raise _fail(
-                "Hook size is required — pass --hook (e.g. --hook 14, or "
-                "--hook 12-16 for a range). Run `flytie add --help` to see "
-                "every option, including --from-file for loading all fields "
-                "at once.",
-                code=2,
-            )
+            raise _fail("--hook with a hook size is required, e.g. '14' for a single size, or '12-16' for a range (flytie add --help).", code=2)
         materials = _parse_materials_or_exit(material)
         payload = _build_pattern_input(
             name=name, hook_size=hook, difficulty=difficulty,
@@ -425,30 +419,10 @@ def restore(
 
 @app.command()
 def shop(
-    pattern: list[str] | None = typer.Option(
-        None,
-        "--pattern",
-        "-p",
-        help="Include this pattern by name. Repeatable.",
-    ),
-    tag: list[str] | None = typer.Option(
-        None,
-        "--tag",
-        "-t",
-        help="Include every pattern with this tag. Repeatable.",
-    ),
-    species: list[str] | None = typer.Option(
-        None,
-        "--species",
-        "-s",
-        help="Include every pattern for this target species. Repeatable.",
-    ),
-    exclude: list[str] | None = typer.Option(
-        None,
-        "--exclude",
-        "-x",
-        help="Drop this material from the shopping list — useful for things you already own. Repeatable.",
-    ),
+    pattern: list[str] | None = typer.Option(None, "--pattern", "-p", help="Include this pattern by name."),
+    tag: list[str] | None = typer.Option(None, "--tag", "-t", help="Include every pattern with this tag."),
+    species: list[str] | None = typer.Option(None, "--species", "-s", help="Include every pattern for this target species."),
+    exclude: list[str] | None = typer.Option(None, "--exclude", "-x", help="Drop this material from the shopping list (already owned)."),
     output_format: str = typer.Option(
         "table", "--format", "-f",
         help="Output format: table, markdown, text, or json.",
@@ -712,41 +686,17 @@ def _resolve_list_arg(flag_label: str, value: list[str] | None, clear: bool) -> 
 @app.command()
 def edit(
     name: str = typer.Argument(...),
-    hook: str | None = typer.Option(
-        None,
-        "--hook",
-        help="Replace hook size — e.g. '14' or '12-16' for a range.",
-    ),
-    difficulty: int | None = typer.Option(None, "--difficulty", min=1, max=5),
-    instructions: str | None = typer.Option(None, "--instructions"),
-    notes: str | None = typer.Option(None, "--notes"),
-    tag: list[str] | None = typer.Option(
-        None,
-        "--tag",
-        "-t",
-        help="Replace the tag list (repeatable). Omit to leave tags unchanged; use --clear-tags to remove all.",
-    ),
-    clear_tags: bool = typer.Option(False, "--clear-tags"),
-    species: list[str] | None = typer.Option(
-        None,
-        "--species",
-        "-s",
-        help="Replace the target-species list (repeatable). Omit to leave unchanged; use --clear-species to remove all.",
-    ),
-    clear_species: bool = typer.Option(False, "--clear-species"),
-    material: list[str] | None = typer.Option(
-        None,
-        "--material",
-        "-m",
-        help=(
-            "Replace the material list (repeatable). Format: "
-            "`name,category,quantity,unit`; only `name` is required. Omit to "
-            "carry over the previous version's materials; use --clear-materials "
-            "to remove all."
-        ),
-    ),
-    clear_materials: bool = typer.Option(False, "--clear-materials"),
-    rename_to: str | None = typer.Option(None, "--rename-to"),
+    hook: str | None = typer.Option(None, "--hook", help="Change hook size or range — e.g. '14' for a single size, or '12-16' for a range."),
+    difficulty: int | None = typer.Option(None, "--difficulty", min=1, max=5, help="Change pattern difficulty (1 easiest, 5 most difficult)."),
+    instructions: str | None = typer.Option(None, "--instructions", help="Change pattern instructions."),
+    notes: str | None = typer.Option(None, "--notes", help="Update pattern notes."),
+    tag: list[str] | None = typer.Option(None, "--tag", "-t",  help="Replace tag list, tags don't carry over."),
+    clear_tags: bool = typer.Option(False, "--clear-tags", help="Clear tag list."),
+    species: list[str] | None = typer.Option(None, "--species", "-s", help="Replace species list, tags don't carry over."),
+    clear_species: bool = typer.Option(False, "--clear-species", help="Clear species list."),
+    material: list[str] | None = typer.Option(None, "--material", "-m", help="Replace material list, materials don't carry over."),
+    clear_materials: bool = typer.Option(False, "--clear-materials", help="Clear material list."),
+    rename_to: str | None = typer.Option(None, "--rename-to", help="Rename pattern."),
     from_file: Path | None = typer.Option(
         None,
         "--from-file",

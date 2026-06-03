@@ -566,7 +566,7 @@ def test_hook_required_error_drops_from_file_mention(env_dirs: tuple[Path, Path]
     # The old wording is gone.
     assert "--hook is required when --from-file is not supplied" not in out
     # The new wording leads with what the user needs to do.
-    assert "Hook size is required" in out
+    assert "hook size is required" in out
     # And it ends with a help-discovery hint, so the user can find --from-file
     # (and everything else) on their own terms.
     assert "flytie add --help" in out
