@@ -18,6 +18,7 @@ from typer.testing import CliRunner
 from flytie.cli import app
 from flytie.config import Settings
 from flytie.db import Database, IncompatibleDatabaseError
+from tests._helpers import cli_help
 
 # ---------------------------------------------------------------------------
 # A3 — Alembic head-check (`Database.validate_compatibility`)
@@ -386,16 +387,11 @@ def test_add_from_file_help_links_to_format_doc() -> None:
 
     The friction log called out that `flytie add --help` was useless as a
     refresher — fixing the help text is the same idea applied to the CLI
-    surface, not just the docs. We force a wide terminal so Typer doesn't
-    truncate the line at column ~80.
+    surface, not just the docs. Wide-terminal default + whitespace
+    normalization are both handled by `cli_help()`.
     """
-    runner = CliRunner()
-    result = runner.invoke(app, ["add", "--help"], env={"COLUMNS": "200"})
-    assert result.exit_code == 0
-    # Normalize whitespace — Typer/Rich may still inject a line break inside
-    # the rendered help cell on some terminals.
-    normalized = " ".join(result.stdout.split())
-    assert "pattern-file-format.md" in normalized
+    out = cli_help(["add"])
+    assert "pattern-file-format.md" in out
 
 
 # C8 — `?` marker in quickstart
@@ -464,16 +460,17 @@ def test_spec_mentions_flytie_info_and_tag_list() -> None:
 # Step B — help text on selector options
 # ---------------------------------------------------------------------------
 #
-# All tests force a wide terminal via env={"COLUMNS": "200"} so Typer doesn't
-# truncate the rendered help text at ~80 columns. The whitespace-normalize
-# trick handles any line breaks Rich still injects inside a help cell.
+# All tests use the shared `cli_help()` helper from `tests/_helpers.py`,
+# which whitespace-normalizes the rendered help output. The
+# `_wide_cli_runner_env` autouse fixture in `conftest.py` ensures every
+# CliRunner invocation defaults to a wide terminal, so wrapping is already
+# minimized at the source; the helper's normalization is a backstop for any
+# residual cell-internal line breaks Rich introduces at 200 columns.
 
 
 def _help(command: list[str]) -> str:
-    runner = CliRunner()
-    result = runner.invoke(app, [*command, "--help"], env={"COLUMNS": "200"})
-    assert result.exit_code == 0, result.stdout + result.stderr
-    return " ".join(result.stdout.split())
+    """Thin re-export of `cli_help` for backward compatibility with existing tests."""
+    return cli_help(command)
 
 
 def test_add_help_documents_material_mini_grammar() -> None:

@@ -159,18 +159,14 @@ def test_malformed_json_pattern_file_friendly_error(
     _init(runner)
     f = tmp_path / "broken.json"
     f.write_text("{not json")
-    # Wide terminal so Rich doesn't wrap the error message mid-phrase.
-    # On a narrow CI terminal, "JSON parse error" would otherwise split as
-    # "JSON\nparse error", breaking the substring assertion.
-    r = runner.invoke(
-        app,
-        ["add", "X", "--hook", "14", "--from-file", str(f)],
-        env={"COLUMNS": "200"},
-    )
+    # The `_wide_cli_runner_env` autouse fixture in `conftest.py` defaults
+    # every invocation to COLUMNS=200 (originally added post-v0.1.1 because
+    # CI's narrow terminal wrapped "JSON parse error" as "JSON\nparse error"
+    # and broke this assertion). The explicit env arg is no longer needed;
+    # whitespace normalization stays as a backstop for any cell-internal
+    # wrapping Rich still introduces at 200 columns.
+    r = runner.invoke(app, ["add", "X", "--hook", "14", "--from-file", str(f)])
     assert r.exit_code == 2
-    # Normalize whitespace before substring-matching so any residual wrapping
-    # (e.g. error text rendered through Rich on a narrow runner terminal)
-    # doesn't break the assertions.
     out = " ".join((r.stdout + r.stderr).split())
     assert "JSON parse error" in out
     assert "Traceback" not in out

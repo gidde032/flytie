@@ -1,0 +1,89 @@
+# pre-commit configuration for flytie.
+#
+# Two stages of gating:
+#
+#   commit  — fast auto-fixers that run on every `git commit`. These
+#             modify files in place; if anything changed, the commit
+#             aborts so you re-stage and re-commit. Sub-second to a
+#             few seconds total.
+#
+#   pre-push — slower gates that run on `git push`. The push fails if
+#             the gate fails. Currently this is the full pytest suite
+#             with COLUMNS=80 forced, which catches the class of
+#             Rich-wrap test fragility documented in
+#             `ai-development-practices.md` §4 — CLI output that wraps
+#             at a narrow terminal width on CI and breaks substring
+#             assertions like `assert "X Y" in r.stdout`. Running the
+#             suite at COLUMNS=80 locally surfaces those failures
+#             before they reach GitHub Actions.
+#
+# Install once after cloning:
+#
+#   pip install pre-commit
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+#
+# After that, hooks run automatically on every commit and push.
+#
+# pre-commit.ci is also enabled on this repo (configured via the
+# GitHub App at https://pre-commit.ci). It runs the `commit`-stage
+# hooks on every PR and pushes a follow-up commit with any auto-fixes,
+# so contributors who don't have pre-commit installed locally still
+# end up with properly-formatted code in the PR. pre-commit.ci does
+# *not* run the pre-push stage — pytest stays in GitHub Actions where
+# it belongs.
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.0
+    hooks:
+      # `ruff format` is Black-compatible and is the project's
+      # canonical formatter. Modifies files in place.
+      - id: ruff-format
+      # `ruff check --fix` applies auto-fixable lint corrections.
+      # Anything not auto-fixable will fail the hook and block the
+      # commit until the contributor addresses it.
+      - id: ruff-check
+        args: [--fix]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      # Standard hygiene. All fast and non-controversial.
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+  - repo: local
+    hooks:
+      - id: pytest-narrow
+        name: pytest at COLUMNS=80 (catches Rich-wrap fragility)
+        # Force a narrow terminal so any latent Rich-wrap test
+        # fragility surfaces locally before it reaches CI. The full
+        # suite runs in ~40 seconds; we're trading wait time at push
+        # for a closed class of CI-only failures. See
+        # ai-development-practices.md §4 for the lesson.
+        #
+        # `env` is Unix-only; Windows contributors using cmd will need
+        # `set COLUMNS=80 && pytest ...` or to run pre-commit under WSL.
+        # Spec NFR §4 already documents WSL as the recommended Windows
+        # path for the project.
+        entry: env COLUMNS=80 pytest -q -p no:cacheprovider --tb=line
+        language: system
+        pass_filenames: false
+        # Pre-push stage only. Running pytest on every commit would
+        # make `git commit` take 40 seconds, which kills the practice.
+        stages: [pre-push]
+
+ci:
+  # pre-commit.ci-specific configuration. Skip the local pytest hook;
+  # GitHub Actions handles testing on PRs, and pre-commit.ci would
+  # struggle to run pytest in its sandboxed environment anyway.
+  skip: [pytest-narrow]
+  # Auto-update the pre-commit hook versions on a quarterly cadence.
+  autoupdate_schedule: quarterly
+  # Commits pre-commit.ci pushes back to the PR will use this message.
+  autofix_commit_msg: "style: auto-fix from pre-commit.ci hooks"

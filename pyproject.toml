@@ -56,6 +56,11 @@ dev = [
     "ruff>=0.5",
     "black>=24.4",
     "mypy>=1.10",
+    # `pre-commit` powers the project's commit/pre-push hooks (ruff format,
+    # ruff check, basic hygiene, and pytest-at-narrow-terminal). See
+    # CONTRIBUTING.md for the install + `pre-commit install --hook-type ...`
+    # one-liner. pre-commit.ci runs the same config on every PR.
+    "pre-commit>=3.5",
 ]
 
 [project.scripts]

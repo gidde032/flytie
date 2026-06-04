@@ -26,13 +26,13 @@ def _init(runner: CliRunner) -> None:
 
 def test_config_path_prints_config_file(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
-    # Wide terminal so Rich/Click doesn't wrap the printed path mid-string.
-    # On a narrow CI terminal, `config.toml` would otherwise split as
-    # `config.tom\nl`, breaking the substring assertion.
-    r = runner.invoke(app, ["config", "path"], env={"COLUMNS": "200"})
+    # The `_wide_cli_runner_env` autouse fixture in `conftest.py` defaults
+    # every invocation to COLUMNS=200 — the explicit env arg this test
+    # previously carried (post-v0.1.1 CI fix for the `config.tom\nl` wrap)
+    # is no longer needed. The whitespace-normalize backstop stays so that
+    # any residual wrapping inside the printed path doesn't matter.
+    r = runner.invoke(app, ["config", "path"])
     assert r.exit_code == 0
-    # Also normalize whitespace in case any wrapping still slips through;
-    # we only care that the filename is present, not where line breaks fall.
     assert "config.toml" in "".join(r.stdout.split())
 
 
