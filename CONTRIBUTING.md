@@ -56,11 +56,11 @@ git push --no-verify       # skip pre-push hook
 
 Two GitHub Actions workflows:
 
-- `.github/workflows/ci.yml` — runs on every PR. Installs the dev extras,
-  runs `ruff check`, `ruff format --check`, `mypy src`, and `pytest`. Same
-  checks the pre-commit hooks run locally, plus `ruff format --check` as a
-  belt-and-suspenders gate in case someone pushed without pre-commit
-  installed.
+- `.github/workflows/ci.yml` — runs on every PR. Installs all extras
+  (including the native Pango library so WeasyPrint loads), then runs
+  `ruff format --check`, `ruff check`, `mypy src`, and `pytest --cov`
+  with the v0.1.2 coverage floor (85%). Same checks the pre-commit
+  hooks run locally, plus the coverage gate.
 - `.github/workflows/release.yml` — fires on `v*` tag pushes. Runs the
   same gates, then builds the sdist + wheel, asserts the tag matches
   `__version__` in `src/flytie/__init__.py`, and publishes to PyPI via
@@ -71,6 +71,38 @@ runs the commit-stage hooks on every PR. If you forgot to install
 pre-commit locally and pushed unformatted code, pre-commit.ci will run
 `ruff format` and push a follow-up commit fixing it. You'll get a
 notification when this happens; just `git pull` to sync your branch.
+
+### Note: `ci.yml`'s lint step is gate-only
+
+The CI lint step runs `ruff format --check` and `ruff check` — no `--fix`.
+Auto-fixing happens in two places that *aren't* the GitHub Actions runner:
+in your local pre-commit hooks (which actually persist the fix back to your
+working tree), and in pre-commit.ci (which pushes a follow-up commit to the
+PR). Auto-fixing in `ci.yml` would only mutate the runner's ephemeral
+filesystem and silently weaken the gate.
+
+## Enabling pre-commit.ci (maintainer task)
+
+If you fork the repo or move it elsewhere, pre-commit.ci needs to be
+re-enabled on the new fork:
+
+1. Visit https://github.com/apps/pre-commit-ci
+2. Click "Configure" (or "Install" if you've never used it before)
+3. Grant access to the relevant repo (or "all repositories" for blanket
+   coverage of your future projects)
+
+The `ci:` block at the bottom of `.pre-commit-config.yaml` already tells
+pre-commit.ci which hooks to run, what to skip, and how often to auto-bump
+hook versions — so once the app is installed there's no per-repo
+configuration needed. The first PR after enrollment will show
+`pre-commit-ci[bot]` activity in the checks list.
+
+## Formatter policy
+
+The project uses `ruff` for both linting and formatting. `ruff format`
+produces Black-compatible output, so contributors who are used to Black
+will see identical behavior; the older `black` dev dependency was dropped
+in v0.1.2 to avoid running two formatters with the same opinions.
 
 ## Running tests manually
 

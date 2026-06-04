@@ -17,14 +17,33 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install native PDF dependencies
+        # WeasyPrint (pulled in via the [pdf] extra below) loads native
+        # Pango/Cairo libraries via ctypes; without them, importing
+        # weasyprint raises OSError and every PDF test would skip via the
+        # module-level guard in test_pdf_export.py / test_cli_export.py.
+        # Installing here means CI actually runs the PDF path.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
       - name: Install
+        # Install with all extras so the pdf and ai code paths are
+        # exercised in CI, not just the core. The test files cleanly skip
+        # when their dependencies aren't loadable, so a missing extra
+        # silently hides regressions in those paths. v0.1.2: bullet 2.2.
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[dev,pdf,ai]"
       - name: Lint
+        # Both checks are gates only — no `--fix` in CI. Auto-fixing in
+        # the runner is a no-op (the runner's filesystem is ephemeral)
+        # and weakens the gate (anything auto-fixable would silently
+        # pass even when the repo state is still unformatted). Locally,
+        # the pre-commit hooks (see .pre-commit-config.yaml) do the
+        # fixing; on PRs, pre-commit.ci pushes a follow-up commit with
+        # the fix. ci.yml's job is just to say yes or no.
         run: |
           ruff format --check src tests
-          ruff check --fix src tests
           ruff check src tests
       - name: Type check
         run: |

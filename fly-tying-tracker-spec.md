@@ -29,7 +29,7 @@ A user can install the tool from PyPI, add five patterns in under ten minutes, g
 | AI Agent | Anthropic Claude API (`claude-sonnet-4-6` or current) | Streaming structured suggestions |
 | Templating | Jinja2 | Pattern card HTML templates |
 | Testing | pytest + pytest-cov | Unit, integration, snapshot coverage |
-| Linting/Formatting | ruff + black | Single-tool linting + opinionated formatting |
+| Linting/Formatting | ruff (handles both lint and format; Black-compatible output) | Single-tool linting + opinionated formatting |
 | Type Checking | mypy | Catch type errors before runtime |
 | Packaging | hatchling + pyproject.toml | Modern, PEP 621–compliant build |
 | Distribution | PyPI via `twine` / `hatch publish` | Standard Python ecosystem |

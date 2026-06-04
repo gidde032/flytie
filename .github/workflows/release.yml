@@ -15,10 +15,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install native PDF dependencies
+        # WeasyPrint loads native Pango/Cairo via ctypes; without them
+        # the PDF tests would skip. Install on the runner so the release
+        # pipeline genuinely exercises the PDF path before publishing.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0
       - name: Install
+        # All extras so the pdf and ai paths are exercised. A release
+        # that silently broke `flytie export` or `flytie suggest` because
+        # the test job didn't install their deps would be exactly the
+        # kind of post-PyPI surprise the v0.1.1 release-test reviewer
+        # flagged. v0.1.2: bullet 2.2.
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[dev,pdf,ai]"
       - name: Lint
         run: ruff check src tests
       - name: Type check

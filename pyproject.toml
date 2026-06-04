@@ -53,8 +53,11 @@ dev = [
     "pytest>=8.2",
     "pytest-cov>=5.0",
     "syrupy>=4.6",
+    # Ruff handles both lint and format (Black-compatible). The spec
+    # originally listed "ruff + black"; v0.1.2 dropped black since
+    # `ruff format` produces identical output and running two formatters
+    # with the same opinions adds noise without value.
     "ruff>=0.5",
-    "black>=24.4",
     "mypy>=1.10",
     # `pre-commit` powers the project's commit/pre-push hooks (ruff format,
     # ruff check, basic hygiene, and pytest-at-narrow-terminal). See
@@ -108,10 +111,39 @@ markers = [
 [tool.coverage.run]
 source = ["src/flytie"]
 branch = true
+omit = [
+    # Inert placeholders from the Phase 3 FUSE recovery (see handoff.md
+    # known issue #5). They're already excluded from pytest collection
+    # (`addopts --ignore=...`) and ruff lint ([tool.ruff].exclude). The
+    # same exclusion belongs here so they don't drag the coverage floor
+    # down — they contain zero shipping code.
+    "src/flytie/*_old.py",
+    "src/flytie/core/*_old.py",
+    "src/flytie/migrations/*_old.py",
+    # `__main__.py` is a 5-line entry-point wrapper exercised only via
+    # `python -m flytie`; testing it adds no real coverage value relative
+    # to the existing `flytie` console_script tests in `test_cli_*.py`.
+    "src/flytie/__main__.py",
+    # Alembic migrations run inside a subprocess that coverage.py can't
+    # see. The migration's *effect* is exercised end-to-end by every
+    # test that uses the `database` fixture (`create_schema()` runs the
+    # upgrade), and the stamped-but-empty repair path is pinned by
+    # `test_create_schema_repairs_stamped_but_empty_database` in
+    # `tests/test_review_fixes_phase6.py`. The contract is tested even
+    # though the lines aren't visible to coverage.
+    "src/flytie/migrations/env.py",
+    "src/flytie/migrations/versions/*.py",
+]
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+# Spec NFR §4 promises >85% coverage on core modules. `fail_under` makes
+# the bar enforceable: any future change that drops the project below 85%
+# fails CI rather than silently regressing. The current real coverage is
+# ~93% across the modules above; 85% leaves headroom for legitimate
+# uncovered defensive branches without requiring everything to be 100%.
+fail_under = 85
 
 [tool.ruff]
 line-length = 100
@@ -132,10 +164,6 @@ exclude = [
 select = ["E", "F", "I", "B", "UP", "RUF"]
 # B008: Typer requires `typer.Argument`/`typer.Option` as defaults; that's the framework idiom.
 ignore = ["E501", "B008"]
-
-[tool.black]
-line-length = 100
-target-version = ["py310"]
 
 [tool.mypy]
 python_version = "3.10"
