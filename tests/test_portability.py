@@ -357,6 +357,7 @@ def test_cli_export_db_subset_by_tag(env_dirs: tuple[Path, Path], tmp_path: Path
     assert names == ["Adams"]
 
 
+@pytest.mark.smoke
 def test_cli_import_db_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     runner = CliRunner()
     # First database: populate and export.

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from flytie.cli import app
@@ -116,6 +117,7 @@ def test_restore_old_version(env_dirs: tuple[Path, Path]) -> None:
     assert "14" in r.stdout  # restored hook size
 
 
+@pytest.mark.smoke
 def test_shop_dedupes_across_patterns(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
     _init(runner)

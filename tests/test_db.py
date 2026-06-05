@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from flytie.cli import app
@@ -11,6 +12,7 @@ from flytie.config import load_settings
 from flytie.db import Database
 
 
+@pytest.mark.smoke
 def test_init_creates_db_file(env_dirs: tuple[Path, Path]) -> None:
     _, data_dir = env_dirs
     runner = CliRunner()

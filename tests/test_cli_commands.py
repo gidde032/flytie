@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from flytie.cli import app
@@ -20,6 +21,7 @@ def _init(runner: CliRunner) -> None:
     assert r.exit_code == 0, r.stdout
 
 
+@pytest.mark.smoke
 def test_add_and_list_round_trip(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
     _init(runner)
@@ -54,6 +56,7 @@ def test_add_and_list_round_trip(env_dirs: tuple[Path, Path]) -> None:
     assert "rainbow trout" in r.stdout
 
 
+@pytest.mark.smoke
 def test_view_renders_pattern(env_dirs: tuple[Path, Path]) -> None:
     runner = CliRunner()
     _init(runner)

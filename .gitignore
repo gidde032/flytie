@@ -40,12 +40,15 @@ htmlcov/
 *.db-journal
 *.sqlite
 *.sqlite3
+cards/
 
 # --- Internal project documents (not part of the public repository) ---
 # Build-process and agent-handoff notes. Kept locally, never published.
 handoff.md
 spec-drift-audit.md
 phase-summaries/
+ai-development-practices.md
+collaboration-retrospective.md
 
 # --- Editor / OS ---
 .DS_Store
