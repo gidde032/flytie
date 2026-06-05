@@ -165,6 +165,17 @@ select = ["E", "F", "I", "B", "UP", "RUF"]
 # B008: Typer requires `typer.Argument`/`typer.Option` as defaults; that's the framework idiom.
 ignore = ["E501", "B008"]
 
+[tool.ruff.lint.isort]
+# Explicitly classify packages so the I001 import-sorting rule produces
+# the same result across ruff versions and developer environments.
+# Without this, ruff's auto-detection treated `alembic` and `alembic.config`
+# inconsistently (sandbox vs. CI), thrashing the import order on every
+# `ruff --fix` run. v0.1.2 added the explicit classification after a
+# concrete CI failure traced to that disagreement; see CONTRIBUTING.md
+# "Note: ci.yml's lint step" for the full story.
+known-first-party = ["flytie"]
+known-third-party = ["alembic", "sqlalchemy", "typer", "rich", "pydantic", "anthropic", "weasyprint", "jinja2", "platformdirs", "tomli", "tomli_w"]
+
 [tool.mypy]
 python_version = "3.10"
 strict = true

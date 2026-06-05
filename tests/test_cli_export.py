@@ -2,18 +2,34 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
-try:
-    import jinja2  # noqa: F401
-    import weasyprint  # noqa: F401
-except (ImportError, OSError) as _pdf_err:
+# Probe WeasyPrint in a subprocess before importing it in-process. On
+# macOS environments with mixed-source native libs (Anaconda Python +
+# Homebrew Pango/Cairo is the classic case), WeasyPrint's CFFI `dlopen`
+# can SIGSEGV during import — and SIGSEGV crashes the test collector
+# before any `try/except` can fire. Subprocess isolation turns the
+# crash into a non-zero exit code we can detect. On Linux CI with a
+# clean install the probe succeeds in <1s; the cost is a single
+# subprocess at module-collection time. See ai-development-practices.md
+# §4 ("WeasyPrint native-lib segfault on macOS dev environments").
+_pdf_probe = subprocess.run(
+    [sys.executable, "-c", "import jinja2; import weasyprint"],
+    capture_output=True,
+    timeout=20,
+)
+if _pdf_probe.returncode != 0:
     pytest.skip(
-        f"PDF CLI tests skipped — WeasyPrint not loadable: {_pdf_err}",
+        f"PDF CLI tests skipped — WeasyPrint not safely loadable in this "
+        f"environment (probe exit {_pdf_probe.returncode}). Last stderr: "
+        f"{_pdf_probe.stderr.decode(errors='replace')[-300:]!r}",
         allow_module_level=True,
     )
+
 pdfminer_extract = pytest.importorskip("pdfminer.high_level").extract_text
 
 from typer.testing import CliRunner  # noqa: E402

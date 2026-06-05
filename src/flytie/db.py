@@ -103,9 +103,12 @@ class Database:
 
     def upgrade_to_head(self) -> None:
         """Run Alembic migrations up to head against this database."""
-        from alembic.config import Config
-
+        # Lazy alembic imports — `alembic` is a heavy optional-ish dep and
+        # lazy-importing keeps `import flytie.db` cheap when callers don't
+        # need migrations. Import order is governed by the explicit
+        # `[tool.ruff.lint.isort]` config in pyproject.toml.
         from alembic import command
+        from alembic.config import Config
 
         cfg = Config()
         cfg.set_main_option("script_location", str(MIGRATIONS_DIR))
@@ -114,9 +117,8 @@ class Database:
 
     def stamp_alembic_head(self) -> None:
         """Stamp the DB with the latest Alembic revision without running migrations."""
-        from alembic.config import Config
-
         from alembic import command
+        from alembic.config import Config
 
         cfg = Config()
         cfg.set_main_option("script_location", str(MIGRATIONS_DIR))

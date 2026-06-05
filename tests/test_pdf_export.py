@@ -10,23 +10,34 @@ still passes without the `pdf` extra.
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
-# Skip the entire module when WeasyPrint can't be loaded — either because the
-# Python package isn't installed (`flytie` without the `pdf` extra) OR because
-# its native deps (Pango/Cairo) are missing on this system (common on macOS
-# without `brew install pango`). `pytest.importorskip` only catches ImportError;
-# native-library failures throw OSError, so we wrap manually.
-try:
-    import jinja2  # noqa: F401
-    import weasyprint  # noqa: F401
-except (ImportError, OSError) as _pdf_err:
+# Probe WeasyPrint in a subprocess. Three failure modes the probe handles:
+# (a) the Python package isn't installed (`flytie` without the `pdf` extra),
+# (b) its native deps (Pango/Cairo) are missing or wrong-architecture, and
+# (c) the native libs are *present but mismatched* in a way that triggers a
+# SIGSEGV during dlopen — common on macOS environments mixing Anaconda
+# Python and Homebrew Pango. (a) and (b) would also be caught by an
+# in-process try/except, but (c) crashes the test collector before any
+# exception can fire, which is why we probe in a subprocess instead.
+# See ai-development-practices.md §4.
+_pdf_probe = subprocess.run(
+    [sys.executable, "-c", "import jinja2; import weasyprint"],
+    capture_output=True,
+    timeout=20,
+)
+if _pdf_probe.returncode != 0:
     pytest.skip(
-        f"PDF tests skipped — WeasyPrint not loadable: {_pdf_err}",
+        f"PDF tests skipped — WeasyPrint not safely loadable in this "
+        f"environment (probe exit {_pdf_probe.returncode}). Last stderr: "
+        f"{_pdf_probe.stderr.decode(errors='replace')[-300:]!r}",
         allow_module_level=True,
     )
+
 pdfminer_extract = pytest.importorskip("pdfminer.high_level").extract_text
 
 from flytie.core import patterns as patterns_repo  # noqa: E402
