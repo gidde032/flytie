@@ -32,11 +32,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,pdf,ai]"
       - name: Lint
-        run: ruff check src tests
+        # Both checks, same as ci.yml. Running `ruff check` without
+        # `ruff format --check` would let the release pipeline publish a
+        # codebase that passed lint but had unformatted hunks; v0.1.2
+        # closed that gap.
+        run: |
+          ruff format --check src tests
+          ruff check src tests
       - name: Type check
         run: mypy src
       - name: Test
-        run: pytest
+        # `--cov` triggers pytest-cov, which reads `fail_under = 85` from
+        # `[tool.coverage.report]` in pyproject.toml. Without `--cov` the
+        # coverage gate is silently skipped on the release path — exactly
+        # the kind of "the gate runs on PRs but not on releases" drift
+        # the v0.1.2 dual-lens audit caught.
+        run: pytest --cov=src/flytie --cov-report=term-missing
 
   build:
     needs: test

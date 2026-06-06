@@ -8,6 +8,85 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.1.2] — 2026-06-05
+
+A CI / quality-hardening release. No user-visible behavior changes — every
+fix is in the development workflow, test infrastructure, release pipeline,
+or documentation. The goal was to make the project safer to contribute to
+and harder to silently regress. No breaking changes; existing scripts and
+databases keep working.
+
+### Added
+
+- **Three-tier pre-commit gating** via a new `.pre-commit-config.yaml`:
+  commit-stage hooks (`ruff format`, `ruff check --fix`, basic file
+  hygiene), pre-push hook running the full pytest suite at `COLUMNS=80`
+  to surface Rich-wrap regressions before they reach CI, and
+  [pre-commit.ci](https://pre-commit.ci) enrollment via the `[ci]` block
+  for PR-time enforcement when a contributor pushes without installing
+  hooks locally.
+- **Coverage gate at 85%** via `[tool.coverage.report] fail_under` in
+  `pyproject.toml`, enforced on both the PR path (`ci.yml`) and the
+  release path (`release.yml`). A change that drops total coverage under
+  85% fails the Test step before reaching publish.
+- **`@pytest.mark.smoke`** attached to exactly five happy-path tests
+  (`init` success, `add`+`list` round-trip, `view` renders, `shop`
+  dedupes across patterns, `export-db` → `import-db` round-trip). A
+  regression test asserts the marker carries exactly five tests so the
+  "quick local feedback" promise from spec §7 holds.
+- **Cold-start regression test** pinning best-of-5 `flytie --version`
+  under 600 ms (spec NFR §4). Catches re-introduction of eager top-level
+  imports of heavy dependencies like `weasyprint`, `anthropic`, or
+  `alembic`.
+- **Autouse `_wide_cli_runner_env` fixture** in `tests/conftest.py`
+  patches `CliRunner.invoke` to default `env={"COLUMNS": "200"}` for
+  every in-process CLI test. Eliminates the class of bug where Rich
+  inserts a newline mid-substring (e.g., `JSON\nparse error`) and breaks
+  assertions on the narrow GitHub Actions terminal.
+- **`tests/_helpers.py`** with a `cli_help()` helper, replacing the
+  ad-hoc per-file `_help()` functions that had drifted between modules.
+- **`CONTRIBUTING.md`** covering local setup, the three-tier hook
+  layout, what each CI workflow runs, pre-commit.ci enrollment, the
+  formatter policy, and the coverage / smoke / known-third-party
+  contracts.
+- **Subprocess probe pattern** for native-library imports in the test
+  suite. `weasyprint` can SIGSEGV on macOS when Anaconda Python meets a
+  Homebrew Pango binary mismatch, which `try / except (ImportError,
+  OSError)` cannot catch. A short subprocess `python -c "import
+  weasyprint"` probe before the in-process import survives the segfault
+  and lets the affected tests skip cleanly.
+
+### Changed
+
+- **`ruff` is the sole formatter.** `black` was dropped from `[project.optional-dependencies] dev`; `ruff format`
+  produces Black-compatible output, so there's no behavior change for
+  contributors who were used to Black.
+- **`[tool.ruff.lint.isort]` adds explicit `known-first-party` and
+  `known-third-party` lists.** Without them, ruff's import-classification
+  heuristic produced different results on a developer's laptop vs. the
+  GitHub Actions runner, causing CI to fail on import order after a
+  clean local `ruff check --fix`. The explicit lists make classification
+  deterministic across environments.
+- **Spec NFR §4 startup budget raised from 300 ms to 600 ms.** The
+  original target was tight on real CI hardware; the new budget gives ~2x
+  headroom over the warm steady-state and keeps the gate meaningful for
+  its real purpose (detecting regressions in the import graph) without
+  flaking. Documented inline in the spec.
+- **`release.yml` test job** now installs `.[dev,pdf,ai]` (with the
+  native Pango library) and runs `pytest --cov` plus `ruff format
+  --check`, so the release path exercises the PDF and AI code paths and
+  enforces the same coverage and formatting gates as the PR path.
+- **`ci.yml` lint step** runs `ruff format --check` and `ruff check`
+  without `--fix`. Auto-fixing happens in the local pre-commit hooks
+  (which persist the fix) and in pre-commit.ci (which pushes a follow-up
+  commit). Auto-fixing in CI would only mutate the runner's ephemeral
+  filesystem and silently weaken the gate.
+- **`fly-tying-tracker-spec.md` §4 and §7** backported with the new
+  600 ms cold-start budget and the realized smoke-marker contract.
+
+[Unreleased]: https://github.com/finngidden/flytie/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/finngidden/flytie/compare/v0.1.1...v0.1.2
+
 ## [0.1.1] — 2026-06-02
 
 A hardening release. After a dual-lens audit pass — a prospective-user
@@ -82,7 +161,6 @@ guarantees. No breaking changes; existing scripts and databases keep working.
   implementation, and the new `flytie info` and `flytie tag list` commands
   documented.
 
-[Unreleased]: https://github.com/finngidden/flytie/compare/v0.1.1...HEAD
 [0.1.1]: https://github.com/finngidden/flytie/compare/v0.1.0...v0.1.1
 
 ## [0.1.0] — 2026-05-22

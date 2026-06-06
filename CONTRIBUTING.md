@@ -60,7 +60,11 @@ Two GitHub Actions workflows:
   (including the native Pango library so WeasyPrint loads), then runs
   `ruff format --check`, `ruff check`, `mypy src`, and `pytest --cov`
   with the v0.1.2 coverage floor (85%). Same checks the pre-commit
-  hooks run locally, plus the coverage gate.
+  hooks run locally, plus the coverage gate. If your change drops total
+  coverage under 85% CI fails with "FAIL Required test coverage of 85%
+  not reached"; run `pytest --cov=src/flytie --cov-report=term-missing`
+  locally to see exactly which lines/modules dropped, then add tests
+  before pushing again.
 - `.github/workflows/release.yml` — fires on `v*` tag pushes. Runs the
   same gates, then builds the sdist + wheel, asserts the tag matches
   `__version__` in `src/flytie/__init__.py`, and publishes to PyPI via
@@ -104,17 +108,31 @@ produces Black-compatible output, so contributors who are used to Black
 will see identical behavior; the older `black` dev dependency was dropped
 in v0.1.2 to avoid running two formatters with the same opinions.
 
+If you add a new third-party dependency to `pyproject.toml`, add it to
+the `known-third-party` list under `[tool.ruff.lint.isort]` in the same
+file. Without that entry, ruff's import-sorting heuristic can classify
+the package differently on different machines (developer laptop vs. CI
+runner), causing import-order thrashing between commits. The explicit
+list was added in v0.1.2 to make classification deterministic.
+
 ## Running tests manually
 
 ```bash
 pytest                       # full suite at your local terminal width
 COLUMNS=80 pytest            # same as the pre-push hook (catches wrap fragility)
-pytest -m smoke              # happy-path subset (v0.1.2: WIP — marker registered, no tests yet)
+pytest -m smoke              # 5 happy-path tests, runs in ~3 s (quick local feedback)
 pytest tests/test_cli_*.py   # just the CLI tests
 ruff check src tests         # lint
 ruff format src tests        # format (or `ruff format --check` to verify only)
 mypy src                     # type-check
 ```
+
+Note that `pre-commit run --all-files` runs **only** the commit-stage
+hooks (`ruff format`, `ruff check --fix`, basic hygiene). The pre-push
+hook (`COLUMNS=80 pytest`) is *not* run by `pre-commit run --all-files`
+and must be invoked manually if you want a single "am I ready to push?"
+command. The closest equivalent is `pre-commit run --all-files &&
+COLUMNS=80 pytest`.
 
 ## Writing tests that exercise the CLI
 

@@ -59,6 +59,13 @@ If installing the native libraries isn't an option on your platform, stick
 with the core install and use `flytie export <name> --html` for printable
 output.
 
+**macOS note:** install Pango via Homebrew (`brew install pango`) *before*
+running `pip install "flytie[pdf]"`. On some macOS + Python combinations
+(notably Python installed via Anaconda when Homebrew's Pango is also
+present), importing WeasyPrint without a matching native Pango can
+SIGSEGV the interpreter rather than raise a clean `ImportError`. Running
+`brew install pango` first avoids the binary incompatibility.
+
 ## 60-second example
 
 ```bash
@@ -84,17 +91,22 @@ Every command also has built-in help: `flytie <command> --help`.
 
 ## Project status
 
-Current release: `0.1.1`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
+Current release: `0.1.2`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
 release history.
 
 ## Development
 
 ```bash
 pip install -e ".[dev,pdf,ai]"
+pre-commit install --hook-type pre-commit --hook-type pre-push
 pytest
 ruff check src tests
 mypy src
 ```
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for what runs at each hook stage,
+how to enable pre-commit.ci, and the formatter / coverage / smoke-test
+contracts.
 
 ## License
 
