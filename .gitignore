@@ -47,8 +47,12 @@ cards/
 handoff.md
 spec-drift-audit.md
 phase-summaries/
-ai-development-practices.md
-collaboration-retrospective.md
+ai-development-practices/
+collaboration-retrospective/
+CLAUDE.md
+pending-lessons.md
+subagent-brief-templates.md
+project-FAQ.md
 
 # --- Editor / OS ---
 .DS_Store

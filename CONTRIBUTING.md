@@ -42,8 +42,8 @@ boundary on CI but not locally, breaking substring assertions like
 `assert "JSON parse error" in r.stdout` when Rich inserts a newline between
 `JSON` and `parse`. Running at `COLUMNS=80` locally surfaces those failures
 in ~40 seconds, which is much cheaper than letting CI catch them and
-turning the PR red. See `ai-development-practices.md` §4 for the full
-lesson behind this rule.
+turning the PR red. See `ai-development-practices/assessment.md` §4 for
+the full lesson behind this rule.
 
 If you need to bypass either hook in a hurry (don't make a habit of it):
 
@@ -167,9 +167,8 @@ Internal-only docs (gitignored, kept locally for the project owner):
 
 - `handoff.md` — agent-to-agent context-recovery doc.
 - `phase-summaries/` — per-phase development write-ups.
-- `ai-development-practices.md` (one folder up) — the living practices doc.
-- `collaboration-retrospective.md` (one folder up) — narrative of the
-  human-AI collaboration that produced flytie.
+- `ai-development-practices/` (directory at project root, split into per-topic files in v0.1.2) — the living practices doc; start at `index.md`.
+- `collaboration-retrospective/` (directory at project root, split into per-topic files in v0.1.2) — narrative of the human-AI collaboration that produced flytie; start at `index.md`.
 
 ## Reporting issues
 
