@@ -2,9 +2,9 @@
 
 **flytie** is a local-first, AI-augmented command-line tool for managing fly
 tying patterns. It keeps your patterns in a structured local database so you
-can tag, search, and version them; generate trip-ready shopping lists; export
-printable pattern cards; and ask Claude for recommendations grounded in your
-own library.
+can tag, search, version, and undelete them; view library stats; merge
+duplicate materials; generate trip-ready shopping lists; export printable
+pattern cards; and ask Claude for recommendations grounded in your own library.
 
 Everything lives on your machine in a single SQLite file — there is no account,
 no server, and no network access unless you explicitly run `flytie suggest`.

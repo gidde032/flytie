@@ -64,6 +64,10 @@ dev = [
     # CONTRIBUTING.md for the install + `pre-commit install --hook-type ...`
     # one-liner. pre-commit.ci runs the same config on every PR.
     "pre-commit>=3.5",
+    # pdfminer.six extracts text from rendered PDFs for content assertions
+    # in test_pdf_export.py and test_cli_export.py. Without it those
+    # modules skip via pytest.importorskip.
+    "pdfminer.six>=20221105",
 ]
 
 [project.scripts]

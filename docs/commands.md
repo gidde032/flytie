@@ -44,6 +44,25 @@ disk; see [AI suggestions](ai-suggestions.md) for the policy in full.
 
 ---
 
+## `flytie stats`
+
+Show a read-only summary of your pattern library: active and deleted pattern
+counts, total versions, materials, species, and tags; top-5 most-used
+materials, most-tagged species, and most-versioned patterns; and timeline info
+(oldest, newest, last edited, average versions per pattern).
+
+Deleted patterns are counted separately and excluded from all top-5 rankings.
+"Most-used materials" counts distinct active patterns whose current version
+references each material — not total version rows.
+
+```bash
+flytie stats
+```
+
+If the library is empty, prints a message suggesting `flytie add`.
+
+---
+
 ## `flytie add`
 
 Add a new pattern to the library. `NAME` is required and is case-insensitively
@@ -171,6 +190,26 @@ flytie delete "Old Pattern" --hard --yes
 
 ---
 
+## `flytie undelete`
+
+Restore a soft-deleted pattern to active status. The pattern reappears in
+`list`, `shop`, and other commands exactly as it was before deletion, with its
+full version history intact. Has no effect on hard-deleted patterns (they no
+longer exist in the database).
+
+| Argument | Meaning |
+|---|---|
+| `NAME` | Pattern to restore (required). |
+
+```bash
+flytie undelete "Old Pattern"
+```
+
+If the pattern is already active (not deleted), flytie prints a message and
+exits cleanly — it's safe to run speculatively.
+
+---
+
 ## `flytie versions`
 
 List every version of a pattern, oldest first, with timestamps.
@@ -184,6 +223,9 @@ flytie versions "Parachute Adams"
 ## `flytie diff`
 
 Show a unified diff of materials and instructions between two versions.
+Materials are sorted alphabetically before comparison, so reordering materials
+without changing them produces no diff — only actual additions, removals, and
+quantity changes appear.
 
 | Argument | Meaning |
 |---|---|
@@ -324,6 +366,32 @@ flytie tag remove "Parachute Adams" mayfly
 `flytie tag list` shows only tags currently attached to at least one
 non-deleted pattern, so the output matches what `flytie list --tag <name>`
 would return.
+
+---
+
+## `flytie material merge`
+
+Merge one material into another, rewriting all references across every version
+of every pattern. Use this to clean up duplicates (e.g., "grizzly hackle" and
+"Grizzly Hackle" that ended up as separate materials).
+
+| Argument / Option | Meaning |
+|---|---|
+| `FROM` | Source material to merge away (required). |
+| `TO` | Target material to merge into (required). |
+| `--dry-run` | Preview what would change without writing anything. |
+
+The merge rewrites historical versions retroactively — it asserts "these were
+always the same material." If a version already references both the source and
+target, flytie sums their quantities when the units match and keeps only the
+target's line when they differ, printing a warning either way. After the merge,
+the orphaned source material is deleted from the materials table if no
+references remain.
+
+```bash
+flytie material merge "Grizzly Hackle" "grizzly hackle"
+flytie material merge "Grizzly Hackle" "grizzly hackle" --dry-run
+```
 
 ---
 

@@ -111,7 +111,9 @@ def _version_as_lines(v: PatternVersionDTO) -> list[str]:
         f"difficulty: {difficulty}",
         "materials:",
     ]
-    for m in v.materials:
+    # Sort by canonical name so diffs reflect actual material changes,
+    # not positional reordering noise (Phase-3-deferred redesign, v0.2.0).
+    for m in sorted(v.materials, key=lambda m: m.canonical_name):
         qty = "" if m.quantity is None else f" {m.quantity:g}"
         unit = f" {m.unit}" if m.unit else ""
         note = f"  ({m.notes})" if m.notes else ""

@@ -16,6 +16,7 @@ from rich.table import Table
 from flytie.ai.suggest import SuggestionResult
 from flytie.core.dto import PatternDTO, PatternVersionDTO
 from flytie.core.shop import ShoppingList
+from flytie.core.stats import LibraryStats
 
 
 def patterns_table(patterns: Iterable[PatternDTO]) -> Table:
@@ -252,3 +253,66 @@ def render_suggestions(console: Console, result: SuggestionResult) -> None:
             f"[dim]{new_count} suggestion(s) are not yet in your library — "
             f"add one with `flytie add`.[/dim]"
         )
+
+
+def render_stats(console: Console, stats: LibraryStats) -> None:
+    """Print library statistics as a Rich panel."""
+
+    # --- overview table -------------------------------------------------------
+    overview = Table(show_header=False, box=None, padding=(0, 2))
+    overview.add_column("Label", style="cyan")
+    overview.add_column("Value", justify="right")
+
+    pattern_label = str(stats.active_patterns)
+    if stats.deleted_patterns:
+        pattern_label += f" ({stats.deleted_patterns} deleted)"
+    overview.add_row("Patterns", pattern_label)
+    overview.add_row("Versions", str(stats.total_versions))
+    overview.add_row("Materials", str(stats.total_materials))
+    overview.add_row("Species", str(stats.total_species))
+    overview.add_row("Tags", str(stats.total_tags))
+
+    # --- top 5s ---------------------------------------------------------------
+    top_sections: list[str] = []
+
+    if stats.top_materials:
+        lines = [f"  {i}. {m.name} ({m.count})" for i, m in enumerate(stats.top_materials, 1)]
+        top_sections.append("[cyan]Most-used materials[/cyan]\n" + "\n".join(lines))
+
+    if stats.top_species:
+        lines = [f"  {i}. {s.name} ({s.count})" for i, s in enumerate(stats.top_species, 1)]
+        top_sections.append("[cyan]Most-tagged species[/cyan]\n" + "\n".join(lines))
+
+    if stats.top_versioned:
+        lines = [
+            f"  {i}. {v.name} ({v.count} versions)" for i, v in enumerate(stats.top_versioned, 1)
+        ]
+        top_sections.append("[cyan]Most-versioned patterns[/cyan]\n" + "\n".join(lines))
+
+    # --- timeline -------------------------------------------------------------
+    timeline = Table(show_header=False, box=None, padding=(0, 2))
+    timeline.add_column("Label", style="cyan")
+    timeline.add_column("Value")
+
+    if stats.oldest:
+        timeline.add_row("Oldest", f"{stats.oldest.name} ({stats.oldest.date:%Y-%m-%d})")
+    if stats.newest:
+        timeline.add_row("Newest", f"{stats.newest.name} ({stats.newest.date:%Y-%m-%d})")
+    if stats.most_recently_edited:
+        timeline.add_row(
+            "Last edited",
+            f"{stats.most_recently_edited.name} ({stats.most_recently_edited.date:%Y-%m-%d})",
+        )
+    if stats.active_patterns:
+        timeline.add_row("Avg versions", str(stats.avg_versions_per_pattern))
+
+    # --- assemble panel -------------------------------------------------------
+    group = Table.grid()
+    group.add_row(overview)
+    if top_sections:
+        group.add_row("")
+        group.add_row("\n\n".join(top_sections))
+    group.add_row("")
+    group.add_row(timeline)
+
+    console.print(Panel(group, title="Library Stats", border_style="blue"))

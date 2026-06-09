@@ -10,10 +10,17 @@ network access unless you explicitly run `flytie suggest`.
 
 ## What it does
 
-- **Manage patterns** — add, list, view, search, tag, edit, and delete tying
-  patterns with structured hook sizes, materials, target species, and notes.
+- **Manage patterns** — add, list, view, search, tag, edit, delete, and
+  undelete tying patterns with structured hook sizes, materials, target
+  species, and notes.
 - **Version automatically** — every edit creates an immutable version; list
-  the history, diff any two versions, and restore an old one.
+  the history, diff any two versions, and restore an old one. Diffs sort
+  materials alphabetically so reordering alone produces no noise.
+- **Library stats** — `flytie stats` shows an overview, top-5 rankings, and
+  timeline info for your library at a glance.
+- **Clean up materials** — `flytie material merge` rewrites all references
+  from one material name to another, eliminating duplicates across your
+  entire version history.
 - **Plan trips** — aggregate materials across any set of patterns into one
   deduplicated shopping list, excluding what you already own.
 - **Export cards** — render a styled pattern card to PDF (or HTML).
@@ -91,7 +98,7 @@ Every command also has built-in help: `flytie <command> --help`.
 
 ## Project status
 
-Current release: `0.1.2`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
+Current release: `0.2.0`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
 release history.
 
 ## Development

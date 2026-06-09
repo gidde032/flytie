@@ -51,6 +51,8 @@ app = typer.Typer(
 )
 tag_app = typer.Typer(help="Tag management commands.", no_args_is_help=True)
 app.add_typer(tag_app, name="tag")
+material_app = typer.Typer(help="Material management commands.", no_args_is_help=True)
+app.add_typer(material_app, name="material")
 config_app = typer.Typer(help="Manage user-scoped flytie settings.", no_args_is_help=True)
 app.add_typer(config_app, name="config")
 console = Console()
@@ -236,6 +238,27 @@ def info() -> None:
         _row("Species", str(species_count))
     if incompatibility_msg is not None:
         err_console.print(f"\n[red]Compatibility warning:[/red] {incompatibility_msg}")
+
+
+@app.command()
+def stats() -> None:
+    """Show a read-only summary of your pattern library."""
+    from flytie.core.stats import library_stats
+    from flytie.render import render_stats
+
+    db = _open_db()
+    with db.session() as s:
+        result = library_stats(s)
+    if result.active_patterns == 0:
+        if result.deleted_patterns:
+            console.print(
+                f"No active patterns ({result.deleted_patterns} deleted)"
+                " — run [bold]flytie undelete[/bold] to restore one."
+            )
+        else:
+            console.print("No patterns yet — run [bold]flytie add[/bold] to get started.")
+        raise typer.Exit(code=0)
+    render_stats(console, result)
 
 
 @app.command()
@@ -826,6 +849,23 @@ def delete(
     console.print(f"[green]{'Hard-' if hard else ''}Deleted[/green] {name}")
 
 
+@app.command()
+def undelete(
+    name: str = typer.Argument(...),
+) -> None:
+    """Restore a soft-deleted pattern to active status."""
+    db = _open_db()
+    with db.session() as s:
+        try:
+            result = patterns_repo.undelete_pattern(s, name)
+        except patterns_repo.PatternNotFoundError as exc:
+            raise _fail(str(exc), code=1) from exc
+    if result is None:
+        console.print(f"[yellow]{name} is not deleted[/yellow]")
+    else:
+        console.print(f"[green]Restored[/green] {name}")
+
+
 @tag_app.command("list")
 def tag_list_cmd() -> None:
     """List every tag currently used by a pattern, with usage counts.
@@ -883,6 +923,40 @@ def tag_remove(
         except patterns_repo.PatternNotFoundError as exc:
             raise _fail(str(exc), code=1) from exc
     console.print(f"[green]Untagged[/green] {name}: removed {', '.join(tags)}")
+
+
+@material_app.command("merge")
+def material_merge(
+    from_name: str = typer.Argument(..., help="Source material to merge away."),
+    to_name: str = typer.Argument(..., help="Target material to merge into."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview without making changes."),
+) -> None:
+    """Merge one material into another, rewriting all references."""
+    db = _open_db()
+    with db.session() as s:
+        try:
+            result = patterns_repo.merge_materials(s, from_name, to_name, dry_run=dry_run)
+        except patterns_repo.MaterialNotFoundError as exc:
+            raise _fail(str(exc), code=1) from exc
+        except ValueError as exc:
+            raise _fail(str(exc), code=2) from exc
+
+    if dry_run:
+        console.print(f'Would merge "{result.from_name}" → "{result.to_name}"')
+        if result.affected_patterns:
+            console.print(f"  Affected patterns: {', '.join(result.affected_patterns)}")
+        else:
+            console.print("  Affected patterns: none")
+        console.print(f"  Version rows: {result.version_rows}")
+    else:
+        n = len(result.affected_patterns)
+        console.print(
+            f'[green]Merged[/green] "{result.from_name}" → "{result.to_name}" '
+            f"(affected {n} {'pattern' if n == 1 else 'patterns'}, "
+            f"{result.version_rows} version rows)"
+        )
+    for w in result.warnings:
+        console.print(f"[yellow]Warning:[/yellow] {w}")
 
 
 @app.command()

@@ -8,6 +8,7 @@ boundaries. Returns are either ORM rows (for further composition) or DTOs
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import dataclass, field
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, selectinload
@@ -363,6 +364,22 @@ def soft_delete_pattern(session: Session, name: str) -> Pattern:
     return pattern
 
 
+def undelete_pattern(session: Session, name: str) -> Pattern | None:
+    """Restore a soft-deleted pattern to active status.
+
+    Returns the pattern if it was restored, or ``None`` if the pattern
+    exists but is already active (caller can treat this as a no-op).
+    Raises ``PatternNotFoundError`` if no pattern matches *name*
+    (including hard-deleted patterns).
+    """
+    pattern = get_pattern(session, name, include_deleted=True)
+    if not pattern.is_deleted:
+        return None
+    pattern.is_deleted = False
+    session.flush()
+    return pattern
+
+
 def hard_delete_pattern(session: Session, name: str) -> None:
     pattern = get_pattern(session, name, include_deleted=True)
     # Break the FK to allow ORM cascade on versions.
@@ -391,6 +408,136 @@ def remove_tags(session: Session, name: str, tags: Iterable[str]) -> Pattern:
     pattern.tags[:] = [t for t in pattern.tags if t.name not in keys]
     session.flush()
     return pattern
+
+
+class MaterialNotFoundError(Exception):
+    """Raised when a material lookup fails."""
+
+
+@dataclass
+class MergeResult:
+    """Outcome of a material merge operation."""
+
+    from_name: str
+    to_name: str
+    affected_patterns: list[str] = field(default_factory=list)
+    version_rows: int = 0
+    warnings: list[str] = field(default_factory=list)
+
+
+def _lookup_material(session: Session, name: str) -> Material:
+    """Find a material by canonical name.
+
+    Uses ``normalize_name`` on the input — stored canonical names are always
+    pre-normalized by ``get_or_create_material``, so a direct equality check
+    is correct and consistent with every other lookup in the codebase.
+    """
+    canonical = normalize_name(name)
+    mat = session.scalar(select(Material).where(Material.canonical_name == canonical))
+    if mat is None:
+        raise MaterialNotFoundError(f"Material {name!r} not found")
+    return mat
+
+
+def merge_materials(
+    session: Session,
+    from_name: str,
+    to_name: str,
+    *,
+    dry_run: bool = False,
+) -> MergeResult:
+    """Collapse *from_name* into *to_name*, rewriting all references.
+
+    Rewrites historical version rows (the merge asserts the materials were
+    always the same thing).  Does **not** create new pattern versions.
+
+    If *dry_run* is True, computes what would happen but makes no changes.
+    """
+    from_mat = _lookup_material(session, from_name)
+    to_mat = _lookup_material(session, to_name)
+
+    if from_mat.id == to_mat.id:
+        raise ValueError("Cannot merge a material into itself")
+
+    # All PatternMaterial rows referencing the source material
+    from_rows = (
+        session.execute(select(PatternMaterial).where(PatternMaterial.material_id == from_mat.id))
+        .scalars()
+        .all()
+    )
+
+    # Track which active patterns are affected (for display)
+    affected_pattern_ids: set[int] = set()
+    warnings: list[str] = []
+    rows_affected = 0
+
+    for pm in from_rows:
+        version = session.get(PatternVersion, pm.pattern_version_id)
+        if version is None:
+            continue  # defensive — shouldn't happen with FK constraints
+
+        pattern = session.get(Pattern, version.pattern_id)
+        if pattern is not None and not pattern.is_deleted:
+            affected_pattern_ids.add(pattern.id)
+
+        # Check for duplicate: does this version already have the target material?
+        existing_target = session.scalar(
+            select(PatternMaterial).where(
+                PatternMaterial.pattern_version_id == pm.pattern_version_id,
+                PatternMaterial.material_id == to_mat.id,
+            )
+        )
+
+        if existing_target is not None:
+            # Duplicate within a version — merge quantities if possible
+            if (
+                existing_target.quantity is not None
+                and pm.quantity is not None
+                and existing_target.unit == pm.unit
+            ):
+                if not dry_run:
+                    existing_target.quantity += pm.quantity
+            # Warn the user
+            p_name = pattern.name_display if pattern else "?"
+            v_num = version.version_number
+            warnings.append(
+                f'{p_name} v{v_num} had both materials; kept "{to_mat.canonical_name}" row'
+            )
+            if not dry_run:
+                session.delete(pm)
+        else:
+            if not dry_run:
+                pm.material_id = to_mat.id
+
+        rows_affected += 1
+
+    if not dry_run:
+        session.flush()
+        # Delete the now-orphaned source material (RESTRICT FK ensures safety)
+        session.delete(from_mat)
+        session.flush()
+
+    # Resolve affected pattern names
+    affected_names: list[str] = []
+    if affected_pattern_ids:
+        patterns = (
+            session.execute(
+                select(Pattern.name_display)
+                .where(Pattern.id.in_(affected_pattern_ids))
+                .order_by(Pattern.name_display)
+            )
+            .scalars()
+            .all()
+        )
+        affected_names = list(patterns)
+
+    return MergeResult(
+        from_name=from_mat.canonical_name,
+        to_name=to_mat.canonical_name,
+        affected_patterns=affected_names,
+        version_rows=rows_affected,
+        warnings=warnings,
+    )
 
 
 def to_dto(pattern: Pattern) -> PatternDTO:

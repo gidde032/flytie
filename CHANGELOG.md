@@ -8,6 +8,61 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.2.0] — 2026-06-08
+
+Four user-facing features bundled into a single release. No schema migrations
+required — existing databases work unchanged.
+
+### Added
+
+- **`flytie undelete <name>`** — restore a soft-deleted pattern to active
+  status with its full version history intact. Closes the soft-delete
+  contract gap where a deleted pattern's history was invisible.
+- **`flytie stats`** — read-only library overview: active/deleted pattern
+  counts, total materials/species/tags, top-5 most-used materials,
+  most-tagged species, most-versioned patterns, and timeline info (oldest,
+  newest, last edited, average versions per pattern). Deleted patterns are
+  counted separately and excluded from all rankings.
+- **`flytie material merge <from> <to>`** — rewrite all references from one
+  material to another across every version of every affected pattern.
+  Eliminates duplicates caused by inconsistent naming (e.g., "Grizzly
+  Hackle" vs. "grizzly hackle"). Supports `--dry-run` for previewing.
+  Duplicate-within-version collisions are handled (quantities summed when
+  units match, target kept with a warning when they differ). Orphaned
+  source materials are cleaned up automatically.
+
+### Changed
+
+- **`flytie diff` sorts materials alphabetically** before comparison, so
+  reordering materials without changing them produces no diff. Only actual
+  additions, removals, and quantity changes appear. Previously, moving a
+  material to a different position in the list generated misleading diff
+  lines.
+- **Documentation updated** — `docs/commands.md`, `docs/quickstart.md`,
+  `docs/index.md`, and `README.md` reflect the new commands.
+  `docs/quickstart.md` gained three new sections (delete/undelete, stats,
+  material merge).
+
+### Fixed
+
+- `stats` with only deleted patterns (no active) now correctly shows
+  "No active patterns (N deleted)" instead of the misleading "No patterns
+  yet" message, and reports accurate reference-table totals instead of
+  zeros.
+- `material merge` self-merge (same source and target) now exits with
+  code 2 (input error) instead of code 1, consistent with other
+  input-validation errors.
+- `material merge --dry-run` now always shows the version-rows count, even
+  when no active patterns are affected (previously hidden behind a guard).
+- Material lookup in the merge path now uses `normalize_name` consistently
+  with every other lookup in the codebase, instead of a bare
+  `func.lower()` comparison.
+- `pdfminer.six` added to the `[dev]` extra so PDF content-assertion tests
+  run instead of silently skipping via `pytest.importorskip`.
+
+[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/finngidden/flytie/compare/v0.1.2...v0.2.0
+
 ## [0.1.2] — 2026-06-05
 
 A CI / quality-hardening release. No user-visible behavior changes — every
@@ -84,7 +139,6 @@ databases keep working.
 - **`fly-tying-tracker-spec.md` §4 and §7** backported with the new
   600 ms cold-start budget and the realized smoke-marker contract.
 
-[Unreleased]: https://github.com/finngidden/flytie/compare/v0.1.2...HEAD
 [0.1.2]: https://github.com/finngidden/flytie/compare/v0.1.1...v0.1.2
 
 ## [0.1.1] — 2026-06-02

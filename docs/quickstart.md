@@ -82,7 +82,43 @@ flytie diff "Parachute Adams" 1 2          # what changed between v1 and v2
 flytie restore "Parachute Adams" 1         # bring v1 back as a new version
 ```
 
-## 6. Build a shopping list
+## 6. Delete and restore patterns
+
+Soft-delete hides a pattern from `list` and `shop` without destroying it:
+
+```bash
+flytie delete "Old Pattern"                    # soft-delete (recoverable)
+flytie undelete "Old Pattern"                  # bring it back, history intact
+flytie delete "Old Pattern" --hard --yes       # permanent removal
+```
+
+A soft-deleted pattern's full version history survives and comes back with
+`undelete`. Hard-delete is irreversible.
+
+## 7. Check your library stats
+
+```bash
+flytie stats
+```
+
+Shows an overview (pattern, material, species, and tag counts), top-5 rankings
+(most-used materials, most-tagged species, most-versioned patterns), and
+timeline info (oldest, newest, last edited).
+
+## 8. Clean up duplicate materials
+
+If the same material ended up under two names (e.g., "Grizzly Hackle" and
+"grizzly hackle"), merge them:
+
+```bash
+flytie material merge "Grizzly Hackle" "grizzly hackle"          # rewrite all references
+flytie material merge "Grizzly Hackle" "grizzly hackle" --dry-run # preview first
+```
+
+The merge rewrites every version of every affected pattern, so the history
+reads as if the canonical name was always used.
+
+## 9. Build a shopping list
 
 Aggregate materials across any set of patterns and deduplicate them:
 
@@ -98,7 +134,7 @@ just doesn't sum across patterns.
 
 See the [shopping list cookbook](shopping-list.md) for more.
 
-## 7. Export a pattern card
+## 10. Export a pattern card
 
 ```bash
 flytie export "Parachute Adams" --out ~/cards/parachute-adams.pdf   # specific file
@@ -111,7 +147,7 @@ with no extension) is treated as a directory and is created if missing.
 The `--html` form works on a bare `pip install flytie` — no `[pdf]` extra,
 no native libraries.
 
-## 8. Ask Claude for a suggestion
+## 11. Ask Claude for a suggestion
 
 Set your API key (read only from the environment, never stored):
 
@@ -123,7 +159,7 @@ flytie suggest --species "rainbow trout" --season "late October" \
 
 See [AI suggestions](ai-suggestions.md) for what is and isn't sent to the API.
 
-## 9. Back up or share your library
+## 12. Back up or share your library
 
 ```bash
 flytie export-db --out my-patterns.json    # whole library to JSON

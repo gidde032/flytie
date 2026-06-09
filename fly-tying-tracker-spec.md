@@ -165,7 +165,7 @@ Unit tests cover models, validators, the shopping list aggregation algorithm, an
 
 WeasyPrint has native dependencies (Pango, Cairo) that can be painful on Windows. Mitigation: document the WSL recommendation, test on Linux + macOS in CI, and provide a `--format html` fallback that produces a styled standalone HTML card so users without WeasyPrint can still print from a browser.
 
-Material deduplication is hard because "size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Mitigation: introduce a canonical material table populated on first write, with a `--alias` command for users to merge variants. Defer fuzzy auto-merging to v0.2.
+Material deduplication is hard because "size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Mitigation: canonical material table populated on first write (shipped v0.1.0), `flytie material merge` for manual dedup (shipped v0.2.0), `flytie material dedupe` for edit-distance-based candidate discovery (planned v0.2.1). Semantic matching via Claude API (e.g., "CDC feather" ↔ "cul de canard") deferred to v0.3.
 
 AI suggestions risk hallucinating materials or fly names. Mitigation: the prompt explicitly grounds suggestions in the user's existing pattern library, the response schema requires a rationale, and novel suggestions are flagged `[NEW]` so the user can verify before adding.
 
@@ -175,11 +175,11 @@ Schema evolution after release can break user databases. Mitigation: every schem
 
 ## 9. Open Questions
 
-Should patterns support image attachments in v0.1, or defer to v0.2? Current plan defers to keep the schema simple and avoid blob storage decisions.
+Should patterns support image attachments in v0.1, or defer to v0.2? Current plan defers to keep the schema simple and avoid blob storage decisions. Now a v0.3 candidate.
 
-Should the AI suggestion command be able to write a draft pattern directly into the DB, or only print a recommendation? Current plan: print only in v0.1, with `flytie add --from-suggestion <id>` queued for v0.2.
+Should the AI suggestion command be able to write a draft pattern directly into the DB, or only print a recommendation? Current plan: print only in v0.1, with `flytie add --from-suggestion <id>` planned for v0.2.1. Requires persisting suggestion IDs across sessions (schema change).
 
-Should there be a fly box / inventory module that subtracts owned materials from generated shopping lists by default? Promising for v0.2; out of scope for v0.1 to avoid scope creep.
+Should there be a fly box / inventory module that subtracts owned materials from generated shopping lists by default? Now a v0.3 candidate.
 
 ---
 
