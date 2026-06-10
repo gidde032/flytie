@@ -13,10 +13,11 @@ pip install -e ".[dev,pdf,ai]"
 pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
-The `[dev]` extra installs `pytest`, `ruff`, `mypy`, and `pre-commit`. The
-`[pdf]` and `[ai]` extras pull in WeasyPrint (PDF export) and the Anthropic
-SDK (AI suggestions). All three together is what `pip install -e ".[dev,pdf,ai]"`
-gives you.
+The `[dev]` extra installs `pytest`, `ruff`, `mypy`, `pre-commit`,
+`pdfminer.six` (used in tests to assert PDF content), and `syrupy`
+(snapshot testing). The `[pdf]` and `[ai]` extras pull in WeasyPrint (PDF
+export) and the Anthropic SDK (AI suggestions). All three together is what
+`pip install -e ".[dev,pdf,ai]"` gives you.
 
 WeasyPrint additionally needs native libraries (Pango, Cairo). See
 [`README.md`](README.md#pdf-export-native-dependencies) for the OS install
@@ -59,16 +60,16 @@ Two GitHub Actions workflows:
 - `.github/workflows/ci.yml` — runs on every PR. Installs all extras
   (including the native Pango library so WeasyPrint loads), then runs
   `ruff format --check`, `ruff check`, `mypy src`, and `pytest --cov`
-  with the v0.1.2 coverage floor (85%). Same checks the pre-commit
+  with the 85% coverage floor. Same checks the pre-commit
   hooks run locally, plus the coverage gate. If your change drops total
   coverage under 85% CI fails with "FAIL Required test coverage of 85%
   not reached"; run `pytest --cov=src/flytie --cov-report=term-missing`
   locally to see exactly which lines/modules dropped, then add tests
   before pushing again.
 - `.github/workflows/release.yml` — fires on `v*` tag pushes. Runs the
-  same gates, then builds the sdist + wheel, asserts the tag matches
-  `__version__` in `src/flytie/__init__.py`, and publishes to PyPI via
-  Trusted Publishing (OIDC; no API token).
+  same gates (across Python 3.10/3.11/3.12), then asserts the tag matches
+  `__version__` in `src/flytie/__init__.py`, builds the sdist + wheel,
+  and publishes to PyPI via Trusted Publishing (OIDC; no API token).
 
 [pre-commit.ci](https://pre-commit.ci) is also enabled on the repo and
 runs the commit-stage hooks on every PR. If you forgot to install

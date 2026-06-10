@@ -65,12 +65,13 @@ If the library is empty, prints a message suggesting `flytie add`.
 
 ## `flytie add`
 
-Add a new pattern to the library. `NAME` is required and is case-insensitively
-unique.
+Add a new pattern to the library. `NAME` is required unless `--from-suggestion`
+is used (in which case the suggestion's name is used by default). Names are
+case-insensitively unique.
 
 | Argument / Option | Meaning |
 |---|---|
-| `NAME` | Pattern name (required). |
+| `NAME` | Pattern name (optional with `--from-suggestion`). |
 | `--hook TEXT` | Hook size or range, e.g. `14` or `12-16`. |
 | `--difficulty INTEGER` | Tying difficulty, 1–5. |
 | `--instructions TEXT` | Free-text tying steps. |
@@ -79,6 +80,7 @@ unique.
 | `-s, --species TEXT` | A target species; repeatable. |
 | `-m, --material TEXT` | A material line; repeatable (see below). |
 | `--from-file PATH` | Load fields from a JSON or TOML file. See [Pattern file format](pattern-file-format.md). |
+| `--from-suggestion INTEGER` | Create a draft pattern from a saved AI suggestion by number (as shown by `flytie suggest`). Cannot be combined with `--from-file`. |
 
 A material is written `name,category,quantity,unit` — only the name is
 required. Valid categories: `thread`, `hook`, `hackle`, `dubbing`, `flash`,
@@ -94,8 +96,17 @@ flytie add "Parachute Adams" --hook 14 --difficulty 3 \
   -m "adams gray dubbing,dubbing"
 ```
 
-With `--from-file`, any CLI flags you also pass layer on top of the file's
-values.
+With `--from-file` or `--from-suggestion`, any CLI flags you also pass layer
+on top of the base values.
+
+When using `--from-suggestion`, materials from the AI suggestion are added with
+category `other` — use `flytie edit` to assign proper categories afterward.
+
+```bash
+# After running flytie suggest:
+flytie add --from-suggestion 1
+flytie add --from-suggestion 2 --hook 16 -t nymph
+```
 
 ---
 
@@ -391,6 +402,31 @@ references remain.
 ```bash
 flytie material merge "Grizzly Hackle" "grizzly hackle"
 flytie material merge "Grizzly Hackle" "grizzly hackle" --dry-run
+```
+
+---
+
+## `flytie material dedupe`
+
+Scan the materials table for likely duplicates and interactively merge them.
+Uses a combination of Levenshtein edit distance (catches typos) and Jaccard
+token overlap (catches reordered words) to find candidate pairs. For each
+candidate, you choose which name to keep — the other is merged away via
+`material merge`.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--threshold` / `-t` | `0.6` | Minimum similarity score (0–1) for a pair to be a candidate. |
+| `--dry-run` | off | List candidates without prompting for merges. |
+
+Interactive prompts: for each candidate, enter `1` to keep the first name,
+`2` to keep the second, `skip` (or `s`) to leave the pair alone, or `quit`
+(or `q`) to stop. The default is skip.
+
+```bash
+flytie material dedupe
+flytie material dedupe --threshold 0.8
+flytie material dedupe --dry-run
 ```
 
 ---

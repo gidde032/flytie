@@ -20,7 +20,8 @@ network access unless you explicitly run `flytie suggest`.
   timeline info for your library at a glance.
 - **Clean up materials** — `flytie material merge` rewrites all references
   from one material name to another, eliminating duplicates across your
-  entire version history.
+  entire version history. `flytie material dedupe` scans for likely
+  duplicates using fuzzy matching and walks you through merging them.
 - **Plan trips** — aggregate materials across any set of patterns into one
   deduplicated shopping list, excluding what you already own.
 - **Export cards** — render a styled pattern card to PDF (or HTML).
@@ -98,7 +99,7 @@ Every command also has built-in help: `flytie <command> --help`.
 
 ## Project status
 
-Current release: `0.2.0`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
+Current release: `0.2.1`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
 release history.
 
 ## Development

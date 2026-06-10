@@ -49,5 +49,7 @@ jobs:
         run: |
           mypy src
       - name: Test
+        env:
+          COLUMNS: "80"
         run: |
           pytest --cov=src/flytie --cov-report=term-missing

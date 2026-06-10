@@ -143,7 +143,7 @@ Render pattern cards to PDF using WeasyPrint with a Jinja2 HTML template and a d
 
 ### Phase 5 — AI Suggestions (Week 6)
 
-Integrate the Anthropic Claude API. The `suggest` command takes `--species`, `--season`, `--water`, and `--conditions`, queries the local DB for patterns that match the species or relevant tags, builds a prompt that includes those patterns as context, and calls Claude with streaming enabled. The response is parsed for structured fields (recommended pattern name, hook size, key materials, rationale) and rendered as a Rich panel with streaming output. Patterns suggested by Claude that already exist in the DB are highlighted; novel suggestions get a `[NEW]` badge and a hint to add them with `flytie add`. (A `flytie add --from-suggestion` shortcut that pre-fills a new pattern directly from a suggestion is **deferred to a later version (v0.2)** per the open-questions deferral; Phase 5 ships only the plain-`flytie add` hint.) The API key is read only from the `ANTHROPIC_API_KEY` environment variable, never from the config file (see FR-8). All API errors fall back to a clear, actionable terminal message. Mock the API in tests using `responses` or a fixture transport so CI does not consume real credits.
+Integrate the Anthropic Claude API. The `suggest` command takes `--species`, `--season`, `--water`, and `--conditions`, queries the local DB for patterns that match the species or relevant tags, builds a prompt that includes those patterns as context, and calls Claude with streaming enabled. The response is parsed for structured fields (recommended pattern name, hook size, key materials, rationale) and rendered as a Rich panel with streaming output. Patterns suggested by Claude that already exist in the DB are highlighted; novel suggestions get a `[NEW]` badge and a hint to add them with `flytie add`. (A `flytie add --from-suggestion` shortcut that pre-fills a draft pattern from a suggestion **shipped in v0.2.1**, using a JSON file for persistence rather than a schema change.) The API key is read only from the `ANTHROPIC_API_KEY` environment variable, never from the config file (see FR-8). All API errors fall back to a clear, actionable terminal message. Mock the API in tests using `responses` or a fixture transport so CI does not consume real credits.
 
 **Phase 5 deliverables.** Live AI suggestions grounded in the user's pattern library, with streaming output, structured rendering, and no network calls in tests.
 
@@ -165,7 +165,7 @@ Unit tests cover models, validators, the shopping list aggregation algorithm, an
 
 WeasyPrint has native dependencies (Pango, Cairo) that can be painful on Windows. Mitigation: document the WSL recommendation, test on Linux + macOS in CI, and provide a `--format html` fallback that produces a styled standalone HTML card so users without WeasyPrint can still print from a browser.
 
-Material deduplication is hard because "size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Mitigation: canonical material table populated on first write (shipped v0.1.0), `flytie material merge` for manual dedup (shipped v0.2.0), `flytie material dedupe` for edit-distance-based candidate discovery (planned v0.2.1). Semantic matching via Claude API (e.g., "CDC feather" ↔ "cul de canard") deferred to v0.3.
+Material deduplication is hard because "size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Mitigation: canonical material table populated on first write (shipped v0.1.0), `flytie material merge` for manual dedup (shipped v0.2.0), `flytie material dedupe` for edit-distance-based candidate discovery (shipped v0.2.1). Semantic matching via Claude API (e.g., "CDC feather" ↔ "cul de canard") deferred to v0.3.
 
 AI suggestions risk hallucinating materials or fly names. Mitigation: the prompt explicitly grounds suggestions in the user's existing pattern library, the response schema requires a rationale, and novel suggestions are flagged `[NEW]` so the user can verify before adding.
 
@@ -177,7 +177,7 @@ Schema evolution after release can break user databases. Mitigation: every schem
 
 Should patterns support image attachments in v0.1, or defer to v0.2? Current plan defers to keep the schema simple and avoid blob storage decisions. Now a v0.3 candidate.
 
-Should the AI suggestion command be able to write a draft pattern directly into the DB, or only print a recommendation? Current plan: print only in v0.1, with `flytie add --from-suggestion <id>` planned for v0.2.1. Requires persisting suggestion IDs across sessions (schema change).
+Should the AI suggestion command be able to write a draft pattern directly into the DB, or only print a recommendation? **Resolved in v0.2.1:** `flytie add --from-suggestion <n>` creates a draft pattern from a saved suggestion. Persistence uses a JSON file in the data directory (no schema change required). Materials are added with category `other`; the user refines via `flytie edit`.
 
 Should there be a fly box / inventory module that subtracts owned materials from generated shopping lists by default? Now a v0.3 candidate.
 

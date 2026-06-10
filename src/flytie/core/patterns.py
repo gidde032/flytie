@@ -490,6 +490,8 @@ def merge_materials(
 
         if existing_target is not None:
             # Duplicate within a version — merge quantities if possible
+            p_name = pattern.name_display if pattern else "?"
+            v_num = version.version_number
             if (
                 existing_target.quantity is not None
                 and pm.quantity is not None
@@ -497,9 +499,15 @@ def merge_materials(
             ):
                 if not dry_run:
                     existing_target.quantity += pm.quantity
-            # Warn the user
-            p_name = pattern.name_display if pattern else "?"
-            v_num = version.version_number
+            elif pm.quantity is not None and existing_target.unit != pm.unit:
+                # Units differ — source quantity is discarded.
+                src_qty = f"{pm.quantity} {pm.unit or '(no unit)'}"
+                warnings.append(
+                    f"{p_name} v{v_num}: discarded quantity {src_qty} from "
+                    f'"{from_mat.canonical_name}" (units differ from '
+                    f'"{to_mat.canonical_name}")'
+                )
+            # Always warn about the duplicate row being collapsed.
             warnings.append(
                 f'{p_name} v{v_num} had both materials; kept "{to_mat.canonical_name}" row'
             )

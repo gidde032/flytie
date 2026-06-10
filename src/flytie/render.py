@@ -14,6 +14,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from flytie.ai.suggest import SuggestionResult
+from flytie.core.dedupe import DupeCandidate
 from flytie.core.dto import PatternDTO, PatternVersionDTO
 from flytie.core.shop import ShoppingList
 from flytie.core.stats import LibraryStats
@@ -251,7 +252,7 @@ def render_suggestions(console: Console, result: SuggestionResult) -> None:
     if new_count:
         console.print(
             f"[dim]{new_count} suggestion(s) are not yet in your library — "
-            f"add one with `flytie add`.[/dim]"
+            f"add one with `flytie add --from-suggestion <n>`.[/dim]"
         )
 
 
@@ -316,3 +317,18 @@ def render_stats(console: Console, stats: LibraryStats) -> None:
     group.add_row(timeline)
 
     console.print(Panel(group, title="Library Stats", border_style="blue"))
+
+
+def render_dedupe_candidate(
+    console: Console,
+    candidate: DupeCandidate,
+    index: int,
+    total: int,
+) -> None:
+    """Print a single duplicate candidate for interactive review."""
+    console.print(
+        f"\n[bold cyan]Candidate {index}/{total}[/bold cyan]"
+        f"  (similarity: [yellow]{candidate.score:.0%}[/yellow])"
+    )
+    console.print(f"  [bold](1)[/bold] {candidate.name_a}  ({candidate.count_a} patterns)")
+    console.print(f"  [bold](2)[/bold] {candidate.name_b}  ({candidate.count_b} patterns)")

@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 
 from flytie import __version__
 from flytie.config import ConfigError, ConfigFile, Settings, load_settings
+from flytie.core import dedupe as dedupe_repo
 from flytie.core import patterns as patterns_repo
 from flytie.core import portability as portability_repo
 from flytie.core import shop as shop_repo
@@ -31,6 +32,7 @@ from flytie.db import Database, IncompatibleDatabaseError
 from flytie.models import Pattern, Species, Tag
 from flytie.render import (
     patterns_table,
+    render_dedupe_candidate,
     render_diff,
     render_pattern,
     render_suggestions,
@@ -263,7 +265,9 @@ def stats() -> None:
 
 @app.command()
 def add(
-    name: str = typer.Argument(..., help="Pattern name (case-insensitive unique)."),
+    name: str | None = typer.Argument(
+        None, help="Pattern name (case-insensitive unique). Optional when using --from-suggestion."
+    ),
     hook: str | None = typer.Option(
         None,
         "--hook",
@@ -299,12 +303,64 @@ def add(
         "--from-file",
         help="Load fields from a JSON or TOML pattern file. See docs/pattern-file-format.md.",
     ),
+    from_suggestion: int | None = typer.Option(
+        None,
+        "--from-suggestion",
+        help=(
+            "Create a draft pattern from a saved AI suggestion by its number "
+            "(as shown by `flytie suggest`). Materials are added with "
+            "category 'other' — use `flytie edit` to refine."
+        ),
+    ),
 ) -> None:
     """Add a new tying pattern to the local library."""
-    if from_file is not None:
-        base = _load_file_or_exit(from_file)
+    if from_suggestion is not None and from_file is not None:
+        raise _fail("--from-suggestion and --from-file cannot be used together.", code=2)
+
+    if from_suggestion is not None:
+        from flytie.core.suggestions import (
+            NoSuggestionsError,
+            SuggestionIndexError,
+            get_suggestion,
+        )
+
+        try:
+            suggestion = get_suggestion(load_settings(), from_suggestion)
+        except (NoSuggestionsError, SuggestionIndexError) as exc:
+            raise _fail(str(exc), code=2) from exc
+
+        # Build a draft PatternInput from the suggestion.
+        draft_materials = [
+            {"canonical_name": m, "category": "other"} for m in suggestion.key_materials
+        ]
+        base = _build_pattern_input(
+            name=suggestion.name,
+            hook_size=suggestion.hook_size or "0",
+            materials=draft_materials,
+        )
+        # Apply CLI overrides (same layering as --from-file).
         overrides: dict[str, object] = {}
-        if name and name != base.name:
+        if name is not None:
+            overrides["name"] = name
+        if hook is not None:
+            overrides["hook_size"] = hook
+        if difficulty is not None:
+            overrides["difficulty"] = difficulty
+        if instructions:
+            overrides["instructions"] = instructions
+        if notes:
+            overrides["notes"] = notes
+        if tag:
+            overrides["tags"] = tag
+        if species:
+            overrides["species"] = species
+        if material:
+            overrides["materials"] = _parse_materials_or_exit(material)
+        payload = base.model_copy(update=overrides)
+    elif from_file is not None:
+        base = _load_file_or_exit(from_file)
+        overrides = {}
+        if name is not None and name != base.name:
             overrides["name"] = name
         if hook is not None:
             overrides["hook_size"] = hook
@@ -322,6 +378,11 @@ def add(
             overrides["materials"] = _parse_materials_or_exit(material)
         payload = base.model_copy(update=overrides)
     else:
+        if name is None:
+            raise _fail(
+                "A pattern name is required, e.g. flytie add 'Adams' --hook 14 (flytie add --help).",
+                code=2,
+            )
         if hook is None:
             raise _fail(
                 "--hook with a hook size is required, e.g. '14' for a single size, or '12-16' for a range (flytie add --help).",
@@ -352,6 +413,17 @@ def add(
     v = dto.current_version
     suffix = f"v{v.version_number}" if v else "(no version)"
     console.print(f"[green]Added[/green] {dto.name} ({suffix})")
+    if from_suggestion is not None:
+        draft_notes: list[str] = [
+            "materials were added with category 'other'",
+        ]
+        if not suggestion.hook_size and hook is None:
+            draft_notes.append("hook size is a placeholder ('0')")
+        console.print(
+            "[yellow]Draft:[/yellow] "
+            + "; ".join(draft_notes)
+            + ". Use [bold]flytie edit[/bold] to refine."
+        )
 
 
 @app.command(name="list")
@@ -572,6 +644,19 @@ def suggest(
         raise _fail("Cancelled.", code=130) from None
 
     render_suggestions(console, result)
+
+    # Persist suggestions so `flytie add --from-suggestion <n>` can reference them.
+    if result.suggestions:
+        from flytie.core.suggestions import save_suggestions
+
+        try:
+            save_suggestions(load_settings(), result)
+        except OSError:
+            console.print(
+                "[yellow]Warning:[/yellow] could not save suggestions to disk. "
+                "`flytie add --from-suggestion` will not work until the next "
+                "successful `flytie suggest` run."
+            )
 
 
 @app.command("export-db")
@@ -957,6 +1042,83 @@ def material_merge(
         )
     for w in result.warnings:
         console.print(f"[yellow]Warning:[/yellow] {w}")
+
+
+@material_app.command("dedupe")
+def material_dedupe(
+    threshold: float = typer.Option(
+        0.6,
+        "--threshold",
+        "-t",
+        help="Minimum similarity score (0-1) for a pair to be considered a candidate.",
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="List candidates without prompting for merges."
+    ),
+) -> None:
+    """Scan for likely duplicate materials and interactively merge them."""
+    db = _open_db()
+    with db.session() as s:
+        candidates = dedupe_repo.find_duplicate_candidates(s, threshold=threshold)
+
+    if not candidates:
+        console.print("[green]No duplicate candidates found.[/green]")
+        return
+
+    console.print(f"Found [bold]{len(candidates)}[/bold] candidate pair(s).\n")
+
+    if dry_run:
+        for i, c in enumerate(candidates, 1):
+            render_dedupe_candidate(console, c, i, len(candidates))
+        return
+
+    merged = 0
+    merged_away: set[str] = set()  # materials already consumed by a prior merge
+    for i, c in enumerate(candidates, 1):
+        # Skip candidates whose materials were already merged away.
+        if c.name_a in merged_away or c.name_b in merged_away:
+            continue
+
+        render_dedupe_candidate(console, c, i, len(candidates))
+        choice = typer.prompt(
+            "  Keep (1) or (2)?  [1/2/skip(s)/quit(q)] [default: skip]",
+            default="",
+            show_default=False,
+        )
+        choice = (choice.strip().lower()) or "skip"
+
+        if choice in {"quit", "q"}:
+            console.print("Stopped.")
+            break
+        if choice in {"skip", "s"}:
+            continue
+        if choice == "1":
+            from_name, to_name = c.name_b, c.name_a
+        elif choice == "2":
+            from_name, to_name = c.name_a, c.name_b
+        else:
+            console.print("[yellow]Unrecognised choice, skipping.[/yellow]")
+            continue
+
+        with db.session() as s:
+            try:
+                result = patterns_repo.merge_materials(s, from_name, to_name)
+            except (patterns_repo.MaterialNotFoundError, ValueError) as exc:
+                console.print(f"[red]Merge failed:[/red] {exc}")
+                continue
+        merged_away.add(from_name)
+        n = len(result.affected_patterns)
+        console.print(
+            f'  [green]Merged[/green] "{result.from_name}" → "{result.to_name}" '
+            f"({n} {'pattern' if n == 1 else 'patterns'}, "
+            f"{result.version_rows} version rows)"
+        )
+        for w in result.warnings:
+            console.print(f"  [yellow]Warning:[/yellow] {w}")
+        merged += 1
+
+    if merged:
+        console.print(f"\n[green]Merged {merged} pair(s).[/green]")
 
 
 @app.command()

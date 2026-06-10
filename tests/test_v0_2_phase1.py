@@ -537,7 +537,10 @@ class TestMergeCore:
         )
 
         result = patterns_repo.merge_materials(session, "grizzly saddle hackle", "grizzly hackle")
-        assert len(result.warnings) == 1
+        # Two warnings: the duplicate-within-version notice + the discarded-quantity notice
+        # (Fix C in v0.2.1 added the explicit quantity-discard warning).
+        assert len(result.warnings) == 2
+        assert any("discarded quantity" in w for w in result.warnings)
 
         p = patterns_repo.get_pattern(session, "Adams")
         hackle_rows = [

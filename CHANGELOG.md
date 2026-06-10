@@ -8,6 +8,47 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.2.1] — 2026-06-09
+
+### Added
+
+- **`flytie material dedupe`** — scan the materials table for likely
+  duplicates using Levenshtein edit distance and Jaccard token overlap.
+  Interactive flow: review each candidate pair, choose which name to keep,
+  and the other is merged away. Supports `--threshold` (default 0.6) and
+  `--dry-run`. Shorthand inputs `s`/`q` accepted alongside `skip`/`quit`.
+- **`flytie add --from-suggestion <n>`** — create a draft pattern from a
+  saved AI suggestion by its number (as shown by `flytie suggest`).
+  Materials are added with category `other`; a draft notice reminds the
+  user to refine via `flytie edit`. Supports all the same CLI overrides as
+  `--from-file`. Cannot be combined with `--from-file`.
+- **Suggestion persistence** — `flytie suggest` now saves results to a JSON
+  file so `--from-suggestion` can reference them without re-querying the API.
+
+### Changed
+
+- `flytie suggest` hint text now reads `flytie add --from-suggestion <n>`
+  instead of the generic `flytie add`.
+- `flytie add` `NAME` argument is now optional when `--from-suggestion` is
+  used (the suggestion's name is used by default).
+
+### Fixed
+
+- **Hook placeholder warning** — `--from-suggestion` with a suggestion that
+  has no hook size now warns that hook `"0"` is a placeholder, rather than
+  storing it silently.
+- **Stale dedupe candidates** — the interactive dedupe loop now skips
+  candidates whose materials were already merged away in an earlier step,
+  instead of showing a confusing "Merge failed" error.
+- **Unit-mismatch quantity warning** — `material merge` (and by extension
+  `material dedupe`) now warns explicitly when a source quantity is
+  discarded because the units differ from the target.
+- **`save_suggestions` failure warning** — if saving suggestions to disk
+  fails (e.g., full disk), a warning is printed instead of silently
+  swallowing the error.
+- **CI `COLUMNS=80`** — added to both `ci.yml` and `release.yml` test steps
+  as defense-in-depth against Rich terminal-width wrapping bugs.
+
 ## [0.2.0] — 2026-06-08
 
 Four user-facing features bundled into a single release. No schema migrations
@@ -60,7 +101,8 @@ required — existing databases work unchanged.
 - `pdfminer.six` added to the `[dev]` extra so PDF content-assertion tests
   run instead of silently skipping via `pytest.importorskip`.
 
-[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/finngidden/flytie/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/finngidden/flytie/compare/v0.1.2...v0.2.0
 
 ## [0.1.2] — 2026-06-05

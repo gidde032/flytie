@@ -11,7 +11,7 @@
 #             the gate fails. Currently this is the full pytest suite
 #             with COLUMNS=80 forced, which catches the class of
 #             Rich-wrap test fragility documented in
-#             `ai-development-practices.md` §4 — CLI output that wraps
+#             `ai-development-practices/assessment.md` §4 — CLI output that wraps
 #             at a narrow terminal width on CI and breaks substring
 #             assertions like `assert "X Y" in r.stdout`. Running the
 #             suite at COLUMNS=80 locally surfaces those failures
@@ -65,7 +65,7 @@ repos:
         # fragility surfaces locally before it reaches CI. The full
         # suite runs in ~40 seconds; we're trading wait time at push
         # for a closed class of CI-only failures. See
-        # ai-development-practices.md §4 for the lesson.
+        # ai-development-practices/assessment.md §4 for the lesson.
         #
         # `env` is Unix-only; Windows contributors using cmd will need
         # `set COLUMNS=80 && pytest ...` or to run pre-commit under WSL.
