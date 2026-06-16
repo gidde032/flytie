@@ -57,11 +57,45 @@ Each suggestion carries a badge:
 
 - **`[in library]`** — the fly already exists in your pattern library. The
   model is pointing you at something you can already tie.
-- **`[NEW]`** — the fly is not in your library. To add it, run `flytie add`
-  with the details from the panel.
+- **`[NEW]`** — the fly is not in your library. You can add it directly
+  using `--from-suggestion` (see below).
 
 If the model returns more flies than `--n`, the list is trimmed to the number
 you asked for.
+
+## Saving and using suggestions
+
+Every `flytie suggest` run automatically saves its results to a JSON file
+in your data directory (`last_suggestions.json`). Only the most recent run
+is kept — a new `suggest` call overwrites the previous results.
+
+The suggestions are numbered in the output (1, 2, 3, …). You can reference
+any suggestion by its number to create a new pattern:
+
+```bash
+# Add suggestion #2 as a new draft pattern
+flytie add --from-suggestion 2
+```
+
+This creates the pattern with the suggestion's name, hook size, and materials
+pre-filled. The pattern is marked as a **draft** (a note in the version
+history indicates it originated from an AI suggestion) so you know to review
+and refine it. Materials are added with category `other` — use `flytie edit`
+or `flytie material categorize` (when available) to assign proper categories.
+
+You can override the name or hook size at add time:
+
+```bash
+flytie add --from-suggestion 2 --name "My Custom PMD" --hook-size 16
+```
+
+If a pattern with the same name already exists, the command exits with an
+error rather than silently overwriting — rename with `--name` or edit the
+existing pattern instead.
+
+**Important:** `--from-suggestion` references the *last* `suggest` run only.
+If you run `suggest` again, the previous results are gone. Act on the
+suggestions you want before running a new query.
 
 ## Writing good prompts
 

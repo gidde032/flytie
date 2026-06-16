@@ -32,7 +32,7 @@ A user can install the tool from PyPI, add five patterns in under ten minutes, g
 | Linting/Formatting | ruff (handles both lint and format; Black-compatible output) | Single-tool linting + opinionated formatting |
 | Type Checking | mypy | Catch type errors before runtime |
 | Packaging | hatchling + pyproject.toml | Modern, PEP 621–compliant build |
-| Distribution | PyPI via `twine` / `hatch publish` | Standard Python ecosystem |
+| Distribution | PyPI via Trusted Publishing (GitHub Actions OIDC) | No shared secrets; release workflow triggers on tag |
 | CI | GitHub Actions | Lint, type-check, test on PR and tag |
 
 ---
@@ -87,9 +87,9 @@ Three environment variables override resolved paths, primarily for testing and f
 
 ---
 
-## 5. Data Model (Initial Schema)
+## 5. Data Model
 
-The schema is normalized to keep materials canonical and versioning clean.
+The schema is normalized to keep materials canonical and versioning clean. It evolves via Alembic migrations; the tables below reflect the current state.
 
 `patterns` — id, name, current_version_id, is_deleted, created_at, updated_at. The name is stored as two columns: `name_key` (lowercased, whitespace-collapsed canonical form, carrying the UNIQUE constraint) and `name_display` (the form shown to the user). This is how case-insensitive uniqueness is implemented portably on SQLite. `is_deleted` supports soft deletes.
 
@@ -111,47 +111,16 @@ Configuration is **not** stored in the database. User-scoped settings live in a 
 
 ---
 
-## 6. Multi-Phase Development Plan
+## 6. Development History
 
-The work is organized into six phases. Each phase ends with a usable increment, a tagged commit, and passing CI.
+The v0.1.0 build was organized into six phases (foundation → core CLI → versioning & shopping list → PDF export → AI suggestions → polish & publish). Each phase ended with a usable increment, a tagged commit, and passing CI. Detailed write-ups of each phase live in `phase-summaries/phase-{1..6}.md`.
 
-### Phase 1 — Foundation (Week 1)
+Two design decisions made during implementation are worth recording here because they shaped the CLI contract:
 
-Set up the repository skeleton, tooling, and persistence layer. Initialize the Git repo with `pyproject.toml`, `src/flytie/` layout, ruff/black/mypy config, and a baseline GitHub Actions workflow running lint and tests on Python 3.10 / 3.11 / 3.12. Define the SQLAlchemy 2.x declarative models for `Pattern`, `PatternVersion`, `Material`, `PatternMaterial`, `Species`, `Tag`, and their relationships. Wire up Alembic with an initial migration. Build a `Database` helper that resolves the DB path from config, opens a session, and runs pending migrations on startup. Add a minimal `flytie init` command that creates the DB and confirms with Rich output. Write unit tests for model CRUD and relationship cascades.
+- **Flag-driven over interactive.** The original plan proposed interactive prompts for adding materials and an `$EDITOR` integration for `edit`. Both were superseded by repeatable `--material` flags and a `--from-file` path (JSON or TOML). Every command stays scriptable, every edit is recordable from shell history, and `--from-file` covers the bulk-input case the interactive prompt was meant for.
+- **TOML over YAML for `--from-file`.** YAML support was dropped in favor of TOML (already a project dependency via the config file) so the JSON/TOML pair shares one parser with no extra runtime cost.
 
-**Phase 1 deliverables.** Installable package, `flytie init` works, schema migrations run cleanly, CI green on all PRs.
-
-### Phase 2 — Core CLI Commands (Weeks 2–3)
-
-Implement the pattern lifecycle commands using Typer. `flytie add` accepts pattern name, hook size, repeatable `--material` flags for materials (or a `--from-file` flag pointing to a JSON or TOML fragment — see [`docs/pattern-file-format.md`](docs/pattern-file-format.md)), tags, species, and notes. `flytie list` renders a Rich table of patterns with filters (`--tag`, `--species`, `--hook-size`). `flytie view <name>` displays a full pattern card in the terminal. `flytie search <query>` runs a full-text-style match (see FR-3 for the fields searched). `flytie edit <name>` accepts field flags and writes a new `PatternVersion`; renaming requires an explicit `--rename-to` flag (no `$EDITOR` integration in v0.1 — the flag surface is the contract, which keeps every edit scriptable and reviewable). `flytie delete <name>` requires confirmation; soft-delete by default with a `--hard` opt-in. Implement `flytie tag add/remove/list <name> <tag>`. Each command includes `--help` with examples. Add integration tests that exercise the SQLite layer end-to-end using a temp DB fixture.
-
-The original spec proposed "an interactive prompt for materials" and "an interactive editor" for `edit`. Both were superseded by the flag-driven design above during implementation: every command stays scriptable, every edit is recordable from history, and the `--from-file` path covers the bulk-input case the interactive prompt was meant for. YAML support was dropped in favor of TOML (already a project dependency via the config file) so the JSON/TOML pair shares one parser with no extra runtime cost.
-
-**Phase 2 deliverables.** A user can manage patterns entirely from the CLI with formatted output and persistent history.
-
-### Phase 3 — Versioning & Shopping List (Week 4)
-
-Promote versioning from a schema concept to a first-class feature. `flytie versions <name>` lists every version with timestamps. `flytie view <name> --version N` renders a historical version. `flytie diff <name> <v1> <v2>` shows a unified diff of materials and instructions. `flytie restore <name> <version>` creates a new version copied from the old one. Then build the shopping list: `flytie shop` accepts any combination of `--pattern`, `--tag`, `--species` flags (repeatable), aggregates the materials across all selected patterns, deduplicates by canonical material name, sums quantities where units match, and outputs a Rich table grouped by material category. Add `--format markdown|text|json` for non-TTY workflows and `--exclude` to drop materials the user already owns. Snapshot tests cover the rendered output.
-
-**Phase 3 deliverables.** Versioning is queryable and reversible without data loss; trip-ready shopping lists generate in one command.
-
-### Phase 4 — PDF Export (Week 5)
-
-Render pattern cards to PDF using WeasyPrint with a Jinja2 HTML template and a default CSS stylesheet stored alongside the package. `flytie export <name>` writes a single PDF to the current directory; `flytie export --tag dryfly --out cards/` exports a batch. The default template includes a header (pattern name + hook size), a two-column body (materials on the left, instructions on the right), a footer with version and target species, and space for a future photo field. Allow `--template custom.html` and `--css custom.css` overrides. Add a `--photo path.jpg` option that, if WeasyPrint can locate the file, embeds it into the card. Snapshot-test rendered PDFs with `pdfminer.six` text extraction to assert key fields appear.
-
-**Phase 4 deliverables.** Printable, styled pattern cards as PDFs; documented template override path; deterministic snapshot tests.
-
-### Phase 5 — AI Suggestions (Week 6)
-
-Integrate the Anthropic Claude API. The `suggest` command takes `--species`, `--season`, `--water`, and `--conditions`, queries the local DB for patterns that match the species or relevant tags, builds a prompt that includes those patterns as context, and calls Claude with streaming enabled. The response is parsed for structured fields (recommended pattern name, hook size, key materials, rationale) and rendered as a Rich panel with streaming output. Patterns suggested by Claude that already exist in the DB are highlighted; novel suggestions get a `[NEW]` badge and a hint to add them with `flytie add`. (A `flytie add --from-suggestion` shortcut that pre-fills a draft pattern from a suggestion **shipped in v0.2.1**, using a JSON file for persistence rather than a schema change.) The API key is read only from the `ANTHROPIC_API_KEY` environment variable, never from the config file (see FR-8). All API errors fall back to a clear, actionable terminal message. Mock the API in tests using `responses` or a fixture transport so CI does not consume real credits.
-
-**Phase 5 deliverables.** Live AI suggestions grounded in the user's pattern library, with streaming output, structured rendering, and no network calls in tests.
-
-### Phase 6 — Polish, Portability & Publish (Week 7)
-
-Implement `flytie export-db --out patterns.json` and `flytie import-db patterns.json` with `--on-conflict skip|overwrite|rename`. Validate imports against a documented JSON Schema. Write user-facing documentation in `docs/` with a quickstart, command reference, shopping list cookbook, AI prompt tips, and a "from notebook to flytie" migration guide. Add a `flytie --version` flag and a changelog driven by `towncrier` or hand-curated. Configure trusted publishing to PyPI via GitHub Actions on tagged releases. Cut `0.1.0`. Open the repo for feedback, file follow-up issues for v0.2 (photo support, mobile companion, fly box inventory tracking), and write a launch post.
-
-**Phase 6 deliverables.** Patterns are portable across machines, the tool is installable from PyPI, documentation is published, and a 0.1.0 tag exists.
+Post-v0.1.0 development follows the same phase-shaped workflow for features and a hardening-pass shape for quality releases. See `ROADMAP.md` for planned work.
 
 ---
 
@@ -159,30 +128,28 @@ Implement `flytie export-db --out patterns.json` and `flytie import-db patterns.
 
 Unit tests cover models, validators, the shopping list aggregation algorithm, and the AI prompt-construction logic. Integration tests exercise full command paths against a temporary SQLite DB using a pytest fixture that yields an isolated `Database` per test. Snapshot tests cover Rich-rendered tables (using `syrupy`) and PDF text extraction (using `pdfminer.six`). The AI path is tested with a recorded transport that replays a canned streaming response; no real API calls run in CI. A `pytest -m smoke` marker exists for a five-test happy-path suite intended for quick local feedback.
 
+Several testing contracts are enforced structurally rather than by convention: an 85% coverage floor via `[tool.coverage.report] fail_under`, a cold-start benchmark that fails if `flytie --version` exceeds 600 ms (catches import-graph regressions), an autouse `_wide_cli_runner_env` fixture that sets `COLUMNS=200` to eliminate Rich wrap noise during test authoring, a subprocess probe that verifies the installed entry point resolves correctly, and a pre-push hook that re-runs tests at `COLUMNS=80` as a narrow-terminal safety net. The smoke marker count (exactly five tests) is itself regression-tested. See `CONTRIBUTING.md` for the full hook layout and CI gate details.
+
 ---
 
 ## 8. Risks & Mitigations
 
-WeasyPrint has native dependencies (Pango, Cairo) that can be painful on Windows. Mitigation: document the WSL recommendation, test on Linux + macOS in CI, and provide a `--format html` fallback that produces a styled standalone HTML card so users without WeasyPrint can still print from a browser.
+**WeasyPrint native dependencies.** Pango and Cairo can be painful on Windows. Current state: CI tests on Linux + macOS, the README documents WSL for Windows, and `flytie export --html` provides a no-native-deps fallback that produces a styled standalone HTML card printable from a browser.
 
-Material deduplication is hard because "size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Mitigation: canonical material table populated on first write (shipped v0.1.0), `flytie material merge` for manual dedup (shipped v0.2.0), `flytie material dedupe` for edit-distance-based candidate discovery (shipped v0.2.1). Semantic matching via Claude API (e.g., "CDC feather" ↔ "cul de canard") deferred to v0.3.
+**Material deduplication.** "Size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Current state: canonical material table with exact-match dedup on write (v0.1.0), `flytie material merge` for manual dedup (v0.2.0), `flytie material dedupe` for edit-distance-based candidate discovery (v0.2.1). Semantic matching via Claude API is a candidate for a future release (see `ROADMAP.md`).
 
-AI suggestions risk hallucinating materials or fly names. Mitigation: the prompt explicitly grounds suggestions in the user's existing pattern library, the response schema requires a rationale, and novel suggestions are flagged `[NEW]` so the user can verify before adding.
+**AI hallucination.** Suggestions may name materials or flies that don't exist. Current state: the prompt grounds suggestions in the user's existing pattern library, the response schema requires a rationale, and novel suggestions are flagged `[NEW]` so the user verifies before adding.
 
-Schema evolution after release can break user databases. Mitigation: every schema change ships with an Alembic migration, the app refuses to start against a DB newer than its known head, and `flytie export-db` is recommended in release notes before upgrades.
+**Schema evolution.** Database changes after release can break user data. Current state: every schema change ships with an Alembic migration, the app refuses to start against a DB newer than its known head, and `flytie export-db` is recommended in release notes before upgrades.
 
 ---
 
 ## 9. Open Questions
 
-Should patterns support image attachments in v0.1, or defer to v0.2? Current plan defers to keep the schema simple and avoid blob storage decisions. Now a v0.3 candidate.
-
-Should the AI suggestion command be able to write a draft pattern directly into the DB, or only print a recommendation? **Resolved in v0.2.1:** `flytie add --from-suggestion <n>` creates a draft pattern from a saved suggestion. Persistence uses a JSON file in the data directory (no schema change required). Materials are added with category `other`; the user refines via `flytie edit`.
-
-Should there be a fly box / inventory module that subtracts owned materials from generated shopping lists by default? Now a v0.3 candidate.
+All original open questions have been resolved or moved to the feature pipeline. See `ROADMAP.md` for candidate features and their current status.
 
 ---
 
-## 10. Definition of Done (v0.1.0)
+## 10. Definition of Done
 
-The package is installable from PyPI on macOS and Linux with a single `pip install flytie`. A new user can run `flytie init`, add three patterns, generate a shopping list, export a PDF card, and request an AI suggestion within the first ten minutes. Test coverage is at or above 85% on `src/flytie/core/`. Documentation is published. CI is green on `main` and on the `v0.1.0` tag.
+A release is shippable when: all quality gates pass (ruff format, ruff check, mypy, pytest with 85% coverage floor, cold-start benchmark), the tag version matches `__version__` in `src/flytie/__init__.py`, `CHANGELOG.md` has an entry for the release, documentation is updated, and CI is green on `main` and on the tag. The user-facing acceptance bar remains: a new user can `pip install flytie`, run `flytie init`, add patterns, generate a shopping list, export a PDF card, and request an AI suggestion within the first ten minutes.

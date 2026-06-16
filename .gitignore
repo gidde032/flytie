@@ -41,6 +41,7 @@ htmlcov/
 *.sqlite
 *.sqlite3
 cards/
+my-patterns.json
 
 # --- Internal project documents (not part of the public repository) ---
 # Build-process and agent-handoff notes. Kept locally, never published.
@@ -50,9 +51,11 @@ phase-summaries/
 ai-development-practices/
 collaboration-retrospective/
 CLAUDE.md
+ROADMAP.md
 pending-lessons.md
 subagent-brief-templates.md
 project-FAQ.md
+v0.2.0-phase1-spec.md
 
 # --- Editor / OS ---
 .DS_Store

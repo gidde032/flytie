@@ -101,10 +101,6 @@ required — existing databases work unchanged.
 - `pdfminer.six` added to the `[dev]` extra so PDF content-assertion tests
   run instead of silently skipping via `pytest.importorskip`.
 
-[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.1...HEAD
-[0.2.1]: https://github.com/finngidden/flytie/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/finngidden/flytie/compare/v0.1.2...v0.2.0
-
 ## [0.1.2] — 2026-06-05
 
 A CI / quality-hardening release. No user-visible behavior changes — every
@@ -181,8 +177,6 @@ databases keep working.
 - **`fly-tying-tracker-spec.md` §4 and §7** backported with the new
   600 ms cold-start budget and the realized smoke-marker contract.
 
-[0.1.2]: https://github.com/finngidden/flytie/compare/v0.1.1...v0.1.2
-
 ## [0.1.1] — 2026-06-02
 
 A hardening release. After a dual-lens audit pass — a prospective-user
@@ -257,8 +251,6 @@ guarantees. No breaking changes; existing scripts and databases keep working.
   implementation, and the new `flytie info` and `flytie tag list` commands
   documented.
 
-[0.1.1]: https://github.com/finngidden/flytie/compare/v0.1.0...v0.1.1
-
 ## [0.1.0] — 2026-05-22
 
 First public release. flytie is a local-first, AI-augmented command-line
@@ -293,4 +285,9 @@ manager for fly tying patterns.
   TOML file; `FLYTIE_CONFIG_DIR`, `FLYTIE_DATA_DIR`, and `FLYTIE_DB_PATH`
   override resolved locations.
 
+[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/finngidden/flytie/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/finngidden/flytie/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/finngidden/flytie/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/finngidden/flytie/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/finngidden/flytie/releases/tag/v0.1.0

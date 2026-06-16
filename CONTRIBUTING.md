@@ -30,7 +30,7 @@ The `.pre-commit-config.yaml` registers two stages of hooks:
 
 | Stage     | When it fires    | What it does                                          |
 |-----------|------------------|-------------------------------------------------------|
-| commit    | every `git commit` | `ruff format` + `ruff check --fix` + basic hygiene  |
+| commit    | every `git commit` | `ruff format` + `ruff check --fix` + hygiene checks (trailing-whitespace, end-of-file-fixer, check-yaml, check-toml, check-merge-conflict, check-added-large-files) |
 | pre-push  | every `git push`   | full `pytest` suite at `COLUMNS=80`                 |
 
 **Commit-stage hooks are auto-fixing.** If `ruff format` rewrites a file,
@@ -42,9 +42,7 @@ This catches a specific class of bug where CLI output wraps at the column
 boundary on CI but not locally, breaking substring assertions like
 `assert "JSON parse error" in r.stdout` when Rich inserts a newline between
 `JSON` and `parse`. Running at `COLUMNS=80` locally surfaces those failures
-in ~40 seconds, which is much cheaper than letting CI catch them and
-turning the PR red. See `ai-development-practices/assessment.md` §4 for
-the full lesson behind this rule.
+in ~40 seconds.
 
 If you need to bypass either hook in a hurry (don't make a habit of it):
 
@@ -57,7 +55,7 @@ git push --no-verify       # skip pre-push hook
 
 Two GitHub Actions workflows:
 
-- `.github/workflows/ci.yml` — runs on every PR. Installs all extras
+- `.github/workflows/ci.yml` — runs on pushes to `main` and on every PR. Installs all extras
   (including the native Pango library so WeasyPrint loads), then runs
   `ruff format --check`, `ruff check`, `mypy src`, and `pytest --cov`
   with the 85% coverage floor. Same checks the pre-commit
@@ -170,6 +168,7 @@ Internal-only docs (gitignored, kept locally for the project owner):
 - `phase-summaries/` — per-phase development write-ups.
 - `ai-development-practices/` (directory at project root, split into per-topic files in v0.1.2) — the living practices doc; start at `index.md`.
 - `collaboration-retrospective/` (directory at project root, split into per-topic files in v0.1.2) — narrative of the human-AI collaboration that produced flytie; start at `index.md`.
+- `ROADMAP.md` - planned future changes and version history.
 
 ## Reporting issues
 
