@@ -5,29 +5,39 @@ Tag and search your patterns, track every tweak with automatic versioning,
 generate trip-ready deduplicated shopping lists, export printable pattern
 cards, and ask Claude for recommendations grounded in your own library.
 
+**New to flytie?** Start with the [Quickstart](docs/quickstart.md) — it walks
+through a full workflow in about ten minutes.
+
 Everything lives in a single local SQLite file — no account, no server, and no
 network access unless you explicitly run `flytie suggest`.
 
 ## What it does
 
-- **Manage patterns** — add, list, view, search, tag, edit, delete, and
-  undelete tying patterns with structured hook sizes, materials, target
-  species, and notes.
-- **Version automatically** — every edit creates an immutable version; list
-  the history, diff any two versions, and restore an old one. Diffs sort
-  materials alphabetically so reordering alone produces no noise.
-- **Library stats** — `flytie stats` shows an overview, top-5 rankings, and
-  timeline info for your library at a glance.
+- **Manage patterns** — a pattern stores a name, hook size, materials list
+  (with optional category, quantity, and unit per material), target species,
+  tags, and notes. Add, list, view, search, edit, delete, and restore patterns
+  from the terminal.
+- **Plan trips** — pick a set of patterns by name, tag, or species; `flytie shop`
+  aggregates all their materials into one deduplicated list. That list is your
+  fly shop order before a trip.
+- **Export pattern cards** — render a styled pattern card to PDF or HTML.
+  The card includes the full materials list, hook details, and notes — one
+  page per fly, ready to print or open in a browser.
+- **Get AI suggestions** — `flytie suggest` sends your species, season, and
+  water conditions to Claude and streams back fly recommendations grounded in
+  your own library. Patterns you already own are flagged; new ones are labeled
+  so you know what to tie or buy.
+- **Version automatically** — every edit creates an immutable snapshot.
+  Diff any two versions, view the full history, and restore an old one.
+  Diffs sort materials alphabetically so reordering alone produces no noise.
 - **Clean up materials** — `flytie material merge` rewrites all references
-  from one material name to another, eliminating duplicates across your
-  entire version history. `flytie material dedupe` scans for likely
-  duplicates using fuzzy matching and walks you through merging them.
-- **Plan trips** — aggregate materials across any set of patterns into one
-  deduplicated shopping list, excluding what you already own.
-- **Export cards** — render a styled pattern card to PDF (or HTML).
-- **Get suggestions** — `flytie suggest` asks the Anthropic Claude API for
-  flies suited to a species, season, and water, grounded in your library.
-- **Stay portable** — export and import your whole library as documented JSON.
+  from one material name to another across your entire library and version
+  history. `flytie material dedupe` finds likely duplicates using fuzzy
+  matching and walks you through merging them interactively.
+- **Library stats** — `flytie stats` shows pattern, material, species, and
+  tag counts; top-5 rankings; and timeline info at a glance.
+- **Stay portable** — export your whole library to a single JSON file and
+  import it on any machine.
 
 ## Install
 
@@ -77,11 +87,31 @@ SIGSEGV the interpreter rather than raise a clean `ImportError`. Running
 ## 60-second example
 
 ```bash
+# 1. Create your local database (run once)
 flytie init
-flytie add "Parachute Adams" --hook 14 --tag dry \
-  --material "grizzly hackle,hackle,1,feather"
-flytie shop --tag dry                              # deduped shopping list
-flytie export "Parachute Adams" --out ~/cards/     # printable PDF card
+
+# 2. Add a pattern — the Parachute Adams is a classic dry fly for trout.
+#    Hook size 14 is a mid-size hook. Tag it "dry" so you can find it later.
+#    Each material follows the format: name, category, quantity, unit
+#    (only the name is required; the rest are optional but help with shopping lists)
+flytie add "Parachute Adams" \
+  --hook 14 \
+  --species "brown trout" \
+  --tag dry \
+  --material "grizzly hackle,hackle,1,feather" \
+  --material "adams gray dubbing,dubbing" \
+  --material "white calf body hair,wing"
+
+# 3. List your library and view the full pattern
+flytie list
+flytie view "Parachute Adams"
+
+# 4. Generate a shopping list for all your dry flies before a trip
+flytie shop --tag dry
+
+# 5. Export a printable pattern card
+flytie export "Parachute Adams" --out ~/cards/     # PDF (needs [pdf] extra)
+flytie export "Parachute Adams" --html             # styled HTML, no extras needed
 ```
 
 ## Documentation
