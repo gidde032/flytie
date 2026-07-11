@@ -176,7 +176,15 @@ wrap-tolerant assertions (short fragments, or `tests/_helpers.cli_help`,
 which strips panel borders and normalizes whitespace) so tests pass at
 any gated width. One environment note: an exported `ANTHROPIC_API_KEY`
 never reaches tests — an autouse fixture strips it; tests that need a key
-set one with `monkeypatch.setenv`.
+set one with `monkeypatch.setenv`. Similarly, terminal-forcing and
+width-forcing variables (`TERMINAL_WIDTH`, `FORCE_COLOR`, `PY_COLORS`,
+`GITHUB_ACTIONS`, `TTY_COMPATIBLE`, and friends) are removed at
+`conftest.py` import time — Typer and Rich read them as module-level
+constants when first imported, so a shell that exports them would
+otherwise inject ANSI codes and forced widths into captured CLI output
+and fail tests that pass everywhere else. A subprocess regression test
+re-runs the width and help tests under the hostile combination to keep
+this guarantee honest.
 
 ## Project documentation
 

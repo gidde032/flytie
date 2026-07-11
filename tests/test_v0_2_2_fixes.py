@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -175,25 +177,35 @@ def test_narrow_gate_applies_when_env_set(env_dirs: tuple[Path, Path]) -> None:
     ever stops honoring the variable, the gate run fails here instead of
     silently testing nothing.
     """
+    from tests._helpers import strip_ansi
+
     cols = os.environ.get("FLYTIE_TEST_COLUMNS")
     if cols is None:
         pytest.skip("narrow-terminal stress gate not active (FLYTIE_TEST_COLUMNS unset)")
     runner = CliRunner()
     r = runner.invoke(app, ["--help"])
     assert r.exit_code == 0, r.stdout
-    widest = max(len(line) for line in r.stdout.splitlines() if line.strip())
+    # Measure *visible* width — ANSI escape codes inflate len() if anything
+    # forces Rich into terminal mode.
+    widest = max(len(line) for line in strip_ansi(r.stdout).splitlines() if line.strip())
     assert widest <= int(cols), (
-        f"CLI output is {widest} columns wide but FLYTIE_TEST_COLUMNS={cols} — "
-        "the autouse fixture is no longer honoring the stress-gate variable."
+        f"CLI output is {widest} visible columns wide but FLYTIE_TEST_COLUMNS={cols} — "
+        "the autouse fixture is not controlling terminal width. Known cause: a "
+        "terminal-forcing/width-forcing env var (TERMINAL_WIDTH, FORCE_COLOR, "
+        "PY_COLORS, GITHUB_ACTIONS, TTY_COMPATIBLE) reaching Typer/Rich at import "
+        "time — conftest.py sanitizes these at module top-level; check that the "
+        "sanitization list still covers whatever your environment sets."
     )
 
 
 def test_explicit_env_still_wins_over_fixture_default(env_dirs: tuple[Path, Path]) -> None:
     """C2 (testing/CI specialist, CRITICAL): per-test explicit env beats both defaults."""
+    from tests._helpers import strip_ansi
+
     runner = CliRunner()
     r = runner.invoke(app, ["--help"], env={"COLUMNS": "80"})
     assert r.exit_code == 0, r.stdout
-    widest = max(len(line) for line in r.stdout.splitlines() if line.strip())
+    widest = max(len(line) for line in strip_ansi(r.stdout).splitlines() if line.strip())
     assert widest <= 80
 
 
@@ -530,3 +542,56 @@ def test_fix6_noop_edit_with_own_name_still_succeeds(session) -> None:  # type: 
     )
     assert edited.name_display == "Adams"
     assert edited.current_version.hook_size == "16"
+
+
+# ===========================================================================
+# Terminal-forcing hermeticity — contributor-machine failure, v0.2.2 tag gate
+# ===========================================================================
+
+
+def test_suite_hermetic_against_terminal_forcing_env() -> None:
+    """v0.2.2 tag-gate fix: forcing env vars must not reach Typer/Rich in tests.
+
+    On a real contributor machine, four tests failed at pre-push while CI
+    stayed green: ANSI codes appeared inside CliRunner-captured output and
+    help rendered at a forced width that ignored COLUMNS. Typer's rich help
+    module reads TERMINAL_WIDTH / FORCE_COLOR / PY_COLORS / GITHUB_ACTIONS
+    (and Rich 14 reads TTY_COMPATIBLE) at import time, before fixtures run.
+    conftest.py now pops these at module top-level. This test re-runs the
+    gate sentinel and a help-substring test in a child pytest under the
+    most hostile combination and asserts they stay green — pinning the
+    hermeticity on every machine, whatever the outer shell exports.
+    """
+    env = {
+        **os.environ,
+        "FORCE_COLOR": "1",
+        "PY_COLORS": "1",
+        "TERMINAL_WIDTH": "129",
+        "TTY_COMPATIBLE": "1",
+        "COLORTERM": "truecolor",
+        "FLYTIE_TEST_COLUMNS": "80",
+        "COLUMNS": "80",
+    }
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/test_v0_2_2_fixes.py::test_narrow_gate_applies_when_env_set",
+            "tests/test_v0_2_2_fixes.py::test_explicit_env_still_wins_over_fixture_default",
+            "tests/test_v0_1_1_fixes.py::test_shop_help_calls_out_exclude_use_case",
+            "tests/test_v0_1_1_fixes.py::test_add_help_documents_material_mini_grammar",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+        ],
+        cwd=Path(__file__).resolve().parent.parent,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, (
+        "Suite is not hermetic against terminal-forcing env vars:\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )

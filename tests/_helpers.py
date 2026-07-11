@@ -38,5 +38,19 @@ def cli_help(command: list[str], runner: CliRunner | None = None) -> str:
     r = runner or CliRunner()
     result = r.invoke(app, [*command, "--help"])
     assert result.exit_code == 0, result.stdout + result.stderr
-    stripped = re.sub(r"[─-╿]", " ", result.stdout)
+    # Strip ANSI escape sequences first: if anything forces Rich into
+    # terminal mode despite conftest's env sanitization, color codes land
+    # inside the captured output and interleave mid-phrase (v0.2.2
+    # contributor-machine failure). Then strip panel borders, then
+    # normalize whitespace.
+    stripped = strip_ansi(result.stdout)
+    stripped = re.sub(r"[─-╿]", " ", stripped)
     return " ".join(stripped.split())
+
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences (colors, styles) from CLI output."""
+    return _ANSI_RE.sub("", text)

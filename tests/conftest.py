@@ -47,6 +47,34 @@ from typer.testing import CliRunner
 from flytie.config import Settings, load_settings
 from flytie.db import Database
 
+# --- Terminal hermeticity (v0.2.2) ------------------------------------------
+# Typer's rich help module and Rich itself read several environment variables
+# AT IMPORT TIME as module-level constants (TERMINAL_WIDTH, FORCE_COLOR,
+# PY_COLORS, GITHUB_ACTIONS; Rich 14 adds TTY_COMPATIBLE/TTY_INTERACTIVE) and
+# latch them before any pytest fixture can run. A shell exporting any of them
+# gets ANSI codes inside CliRunner-captured output and help rendered at a
+# forced width that ignores COLUMNS — four tests failed on a real contributor
+# machine this way while CI stayed green. Neutralize them HERE, at module
+# top-level, after conftest's own imports (flytie.config/db don't import
+# typer or create Rich consoles) but before any test module imports
+# flytie.cli — which is what latches these values. A fixture would be too
+# late. (Popping
+# GITHUB_ACTIONS only affects this pytest process — it makes CI rendering
+# behave identically to local instead of secretly forced-terminal.)
+for _var in (
+    "TERMINAL_WIDTH",
+    "FORCE_COLOR",
+    "PY_COLORS",
+    "GITHUB_ACTIONS",
+    "CLICOLOR",
+    "CLICOLOR_FORCE",
+    "COLORTERM",
+    "TTY_COMPATIBLE",
+    "TTY_INTERACTIVE",
+    "NO_COLOR",
+):
+    os.environ.pop(_var, None)
+
 
 @pytest.fixture
 def env_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, Path]:

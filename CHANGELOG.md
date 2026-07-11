@@ -85,6 +85,16 @@ Nothing yet.
 - `edit --rename-to` rejects a name that normalizes to an empty lookup key,
   mirroring `add`'s rule (defensive — unreachable via current normalization,
   pinned by test).
+- The test suite is now hermetic against terminal-forcing environment
+  variables (`TERMINAL_WIDTH`, `FORCE_COLOR`, `PY_COLORS`,
+  `GITHUB_ACTIONS`, `TTY_COMPATIBLE`, …): Typer/Rich read these at import
+  time, so a contributor shell exporting them injected ANSI codes and
+  forced widths into captured CLI output, failing four tests at pre-push
+  while CI stayed green — the narrow-gate sentinel's first real catch.
+  `conftest.py` sanitizes them at module top-level (before fixtures can
+  run, which is too late); `cli_help` and the width assertions
+  additionally strip ANSI as a second layer; a subprocess regression test
+  pins the guarantee under the hostile combination.
 
 ## [0.2.1] — 2026-06-09
 
