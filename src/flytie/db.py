@@ -31,6 +31,20 @@ class IncompatibleDatabaseError(RuntimeError):
     """
 
 
+class SchemaCreationError(RuntimeError):
+    """Raised when `create_schema` cannot produce a complete, usable schema.
+
+    A half-applied migration (interrupted mid-run) can leave a database in a
+    state the Alembic-upgrade-then-direct-build fallback can't repair: the
+    `except Exception` catch-all in `create_schema` swallows the migration
+    failure, and `Base.metadata.create_all` is a no-op against tables that
+    already exist. Without this check, `create_schema` would return
+    normally while the schema stays broken. This is the M4 review finding —
+    a sibling to `IncompatibleDatabaseError` for the "can't build" case
+    rather than the "built by a newer version" case.
+    """
+
+
 def _enable_sqlite_pragmas(dbapi_connection: object, _connection_record: object) -> None:
     """Turn on SQLite foreign key enforcement and sensible journal settings."""
     if isinstance(dbapi_connection, sqlite3.Connection):
@@ -75,11 +89,31 @@ class Database:
             self.upgrade_to_head()
         except Exception:
             self._build_schema_directly()
+            self._require_schema_complete()
             return
         if not self.schema_is_complete():
             # Alembic ran (or no-op'd against a stale stamp) but the tables
             # are missing — a stamped-but-empty DB from an interrupted init.
             self._build_schema_directly()
+            self._require_schema_complete()
+
+    def _require_schema_complete(self) -> None:
+        """Raise `SchemaCreationError` if the direct-build fallback didn't fix it.
+
+        Both `create_schema` call sites reach this only after already trying
+        the direct-metadata-build fallback once. If the schema is *still*
+        incomplete at that point, the database is in a state flytie can't
+        safely repair automatically (a half-applied migration is the usual
+        cause) — refuse rather than silently reporting success.
+        """
+        if not self.schema_is_complete():
+            raise SchemaCreationError(
+                f"Could not build a usable schema at {self.settings.db_path}. "
+                "The database is likely half-migrated and flytie can't repair "
+                "it automatically. Export what you can with `flytie export-db "
+                "--out backup.json`, delete the database file, then run "
+                "`flytie init` to start fresh."
+            )
 
     def schema_is_complete(self) -> bool:
         """True if the core `patterns` table physically exists in the database.

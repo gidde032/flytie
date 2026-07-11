@@ -24,6 +24,15 @@ WeasyPrint additionally needs native libraries (Pango, Cairo). See
 commands. If you can't install those, skip the `[pdf]` extra — the PDF tests
 will skip themselves cleanly, and `flytie export --html` works without them.
 
+**Coverage caveat when skipping extras:** the 85% coverage floor is
+calibrated against a full install. If you skip `[pdf]` (or `[ai]`), the
+skipped tests leave `src/flytie/pdf/` (or `src/flytie/ai/`) largely
+uncovered, and a local `pytest --cov` run will fail the `fail_under = 85`
+gate even though nothing is wrong with your change. That failure will
+*not* reproduce in CI, which always installs all extras. For local runs
+without the full extras, drop the coverage flags (plain `pytest`) or pass
+`--no-cov`, and let CI be the arbiter of the coverage floor.
+
 ## What runs and when
 
 The `.pre-commit-config.yaml` registers two stages of hooks:
@@ -31,7 +40,7 @@ The `.pre-commit-config.yaml` registers two stages of hooks:
 | Stage     | When it fires    | What it does                                          |
 |-----------|------------------|-------------------------------------------------------|
 | commit    | every `git commit` | `ruff format` + `ruff check --fix` + hygiene checks (trailing-whitespace, end-of-file-fixer, check-yaml, check-toml, check-merge-conflict, check-added-large-files) |
-| pre-push  | every `git push`   | full `pytest` suite at `COLUMNS=80`                 |
+| pre-push  | every `git push`   | full `pytest` suite at `FLYTIE_TEST_COLUMNS=80` (narrow-terminal stress) |
 
 **Commit-stage hooks are auto-fixing.** If `ruff format` rewrites a file,
 the commit aborts so you can re-stage the formatted version and re-commit.
@@ -117,27 +126,35 @@ list was added in v0.1.2 to make classification deterministic.
 ## Running tests manually
 
 ```bash
-pytest                       # full suite at your local terminal width
-COLUMNS=80 pytest            # same as the pre-push hook (catches wrap fragility)
-pytest -m smoke              # 5 happy-path tests, runs in ~3 s (quick local feedback)
-pytest tests/test_cli_*.py   # just the CLI tests
-ruff check src tests         # lint
-ruff format src tests        # format (or `ruff format --check` to verify only)
-mypy src                     # type-check
+pytest                             # full suite, wide (200-column) CLI default
+FLYTIE_TEST_COLUMNS=80 pytest      # same as the pre-push hook (narrow-terminal stress)
+pytest -m smoke                    # 5 happy-path tests, runs in ~3 s (quick local feedback)
+pytest tests/test_cli_*.py         # just the CLI tests
+ruff check src tests               # lint
+ruff format src tests              # format (or `ruff format --check` to verify only)
+mypy src                           # type-check
 ```
+
+`FLYTIE_TEST_COLUMNS` is read by the autouse CliRunner fixture in
+`tests/conftest.py` and replaces its wide 200-column default. A plain
+`COLUMNS=80 pytest` does **not** stress narrow terminals — the fixture's
+default overrides the outer variable for every CLI invocation (this was a
+silent no-op from v0.1.2 until the v0.2.2 review caught it).
 
 Note that `pre-commit run --all-files` runs **only** the commit-stage
 hooks (`ruff format`, `ruff check --fix`, basic hygiene). The pre-push
-hook (`COLUMNS=80 pytest`) is *not* run by `pre-commit run --all-files`
-and must be invoked manually if you want a single "am I ready to push?"
-command. The closest equivalent is `pre-commit run --all-files &&
-COLUMNS=80 pytest`.
+hook (`FLYTIE_TEST_COLUMNS=80 pytest`) is *not* run by `pre-commit run
+--all-files` and must be invoked manually if you want a single "am I
+ready to push?" command. The closest equivalent is `pre-commit run
+--all-files && FLYTIE_TEST_COLUMNS=80 pytest`.
 
 ## Writing tests that exercise the CLI
 
 The `tests/conftest.py` autouse fixture `_wide_cli_runner_env` patches
-`CliRunner.invoke` to default `env={"COLUMNS": "200"}` for every test, so
-you don't need to pass it yourself. Two equivalent patterns:
+`CliRunner.invoke` to default `env={"COLUMNS": "200"}` for every test
+(or to `FLYTIE_TEST_COLUMNS` when that's set — the narrow-terminal
+stress gate), so you don't need to pass it yourself. Two equivalent
+patterns:
 
 ```python
 # Pattern 1: inline construction (works because of the autouse patch)
@@ -153,7 +170,13 @@ def test_my_command(env_dirs, cli_runner):
 ```
 
 If you specifically want to assert against narrow-terminal behavior, pass
-`env={"COLUMNS": "80"}` to the invoke call and the override wins.
+`env={"COLUMNS": "80"}` to the invoke call — per-test explicit env wins
+over both the fixture default and `FLYTIE_TEST_COLUMNS`. Prefer
+wrap-tolerant assertions (short fragments, or `tests/_helpers.cli_help`,
+which strips panel borders and normalizes whitespace) so tests pass at
+any gated width. One environment note: an exported `ANTHROPIC_API_KEY`
+never reaches tests — an autouse fixture strips it; tests that need a key
+set one with `monkeypatch.setenv`.
 
 ## Project documentation
 

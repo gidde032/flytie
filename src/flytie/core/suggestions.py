@@ -15,6 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError
+
 from flytie.ai.suggest import Suggestion, SuggestionResult
 from flytie.config import Settings
 
@@ -70,7 +72,7 @@ def load_suggestions(settings: Settings) -> list[Suggestion]:
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
         return [Suggestion(**s) for s in raw["suggestions"]]
-    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+    except (json.JSONDecodeError, KeyError, TypeError, ValidationError) as exc:
         raise NoSuggestionsError(
             f"Could not read saved suggestions from {path} -- the file may be "
             "corrupt. Run `flytie suggest` again."

@@ -474,14 +474,21 @@ def _help(command: list[str]) -> str:
 
 
 def test_add_help_documents_material_mini_grammar() -> None:
-    """`flytie add --help` must describe the `name,category,quantity,unit` format.
+    """`flytie add --help` must describe the name/category/quantity/unit format.
 
     Friction-log finding: the help output was useless as a refresher because
     `--material` showed `TEXT` with no description, so you had to keep going
     back to the README every time you forgot the comma-separated grammar.
+
+    Wording updated in v0.2.2: the original single-token form
+    `name,category,quantity,unit` was ellipsis-truncated by Rich at 80
+    columns (finding C2 — the grammar was invisible on a standard
+    terminal), so the help now spells it with spaces, which wraps cleanly.
+    The parser accepts spaces after commas, so the displayed form is valid
+    input.
     """
     out = _help(["add"])
-    assert "name,category,quantity,unit" in out
+    assert "name, category, quantity, unit" in out
     # And the category enumeration is right there too, so the user doesn't
     # have to switch docs to find out what's valid.
     assert "hackle" in out and "dubbing" in out and "thread" in out

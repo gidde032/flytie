@@ -8,6 +8,84 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Nothing yet.
 
+## [0.2.2] — 2026-07-10
+
+### Changed
+
+- The narrow-terminal test stress gate is now driven by
+  `FLYTIE_TEST_COLUMNS` (read by the autouse CliRunner fixture) instead of
+  a plain `COLUMNS=80`, which the fixture's wide default had silently
+  overridden since v0.1.2 — the pre-push and CI narrow-terminal gates were
+  no-ops. The gate now self-verifies: a sentinel test asserts the CLI
+  output width matches the gated width whenever the variable is set.
+- `flytie add --help` wording made narrow-terminal-safe: the material
+  mini-grammar is now spelled `name, category, quantity, unit` (spaces
+  after commas are valid input) and the pattern-file doc reference
+  shortened, because Rich ellipsis-truncated the original long tokens at
+  80 columns — the help content added by the v0.1.1 friction fixes was
+  invisible on a standard terminal.
+- Smoke-suite wall-clock budget raised from 5 s to 10 s (the assertion
+  stacks a second pytest startup on the suite itself and flaked on loaded
+  runners; the budget is a slow-test tripwire, not a benchmark).
+- Spec backports: new FR-9 (soft delete & restore), FR-10 (library stats),
+  and FR-11 (material maintenance — merge and dedupe) cover the v0.2.x
+  commands that had shipped without functional requirements; FR-6 now
+  describes suggestion persistence and `add --from-suggestion`; FR-2 now
+  documents the rename-moves-the-canonical-key semantics introduced by
+  the `--rename-to` fix; §8's stale "CI tests on Linux + macOS" claim
+  corrected to Linux-only (a macOS leg is parked in the roadmap).
+- README's Windows install note now names WSL as the easiest path (the
+  spec had claimed this was documented; now it is), and
+  `docs/ai-suggestions.md` no longer dangles a "(when available)"
+  reference to the unbuilt `material categorize` command.
+
+### Fixed
+
+- **`flytie edit --rename-to` now actually renames.** Previously only the
+  display name changed; the canonical lookup key was preserved, so a renamed
+  pattern was not addressable by its new name (`flytie view <new name>`
+  failed) and only the old name still resolved. Renaming now updates the
+  canonical key, with the same duplicate-name guard as `flytie add`
+  (including against soft-deleted patterns, with an `undelete` hint).
+  Case/whitespace-only tweaks still update just the display name.
+- `flytie add --from-suggestion` no longer crashes with a raw traceback when
+  the saved suggestions file is valid JSON but not the expected schema — it
+  now reports the documented "could not read saved suggestions" error.
+- `docs/ai-suggestions.md` documented nonexistent `--name`/`--hook-size`
+  flags for `add --from-suggestion`; corrected to the real positional name
+  and `--hook` flag (a regression test now pins this).
+- README: added the missing `add --from-suggestion` mention and a link to
+  `docs/pattern-file-format.md`.
+- Test-suite hygiene: an ambient `ANTHROPIC_API_KEY` in the contributor's
+  shell is now stripped structurally by an autouse fixture instead of by
+  per-test discipline; removed a hardcoded (and no-op) `/tmp` pytest cache
+  path from the smoke-contract subprocess invocations.
+- CONTRIBUTING now warns that skipping the `[pdf]`/`[ai]` extras makes the
+  local 85% coverage gate fail spuriously, and documents the plain-`pytest`
+  / `--no-cov` escape hatch (CI remains the arbiter of the floor).
+- `flytie import-db` now rejects a file containing a blank/whitespace-only
+  `hook_size` up front (whole-file rejection with a clear message), instead
+  of importing patterns that violate the hook-size invariant every other
+  code path enforces.
+- `flytie init` no longer reports success against a half-migrated database
+  it cannot repair: if the schema is still incomplete after the fallback
+  rebuild, it fails loudly (new `SchemaCreationError`) naming the DB path
+  and suggesting `export-db` + re-init.
+- `flytie material merge`/`dedupe` still rewrite soft-deleted patterns'
+  rows (the merge is deliberately global so an undeleted pattern comes back
+  consistent), but those patterns now appear in the affected-patterns
+  report with a `(deleted)` label instead of being silently omitted.
+- `flytie material dedupe`: names shorter than 5 characters no longer
+  qualify as duplicate candidates on edit distance alone ("silk"/"silt"
+  false positives); `--threshold` now validates its 0.0–1.0 range;
+  two empty strings no longer score as identical.
+- `flytie suggest` error messages now distinguish unrecognized server-side
+  HTTP errors (5xx — retry later) from client-side ones (4xx — check the
+  request or key).
+- `edit --rename-to` rejects a name that normalizes to an empty lookup key,
+  mirroring `add`'s rule (defensive — unreachable via current normalization,
+  pinned by test).
+
 ## [0.2.1] — 2026-06-09
 
 ### Added
@@ -285,7 +363,8 @@ manager for fly tying patterns.
   TOML file; `FLYTIE_CONFIG_DIR`, `FLYTIE_DATA_DIR`, and `FLYTIE_DB_PATH`
   override resolved locations.
 
-[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/finngidden/flytie/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/finngidden/flytie/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/finngidden/flytie/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/finngidden/flytie/compare/v0.1.1...v0.1.2

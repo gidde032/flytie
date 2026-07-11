@@ -43,7 +43,7 @@ A user can install the tool from PyPI, add five patterns in under ten minutes, g
 The tool must allow users to create, read, update, delete, list, and search fly tying patterns. Each pattern has a unique name (case-insensitive), a hook size (or range), a list of materials with quantities and notes, freeform tying instructions, a list of target species, a list of tags, an optional difficulty rating, and free-form notes. All patterns are scoped to a single user-local database file.
 
 ### FR-2 — Versioning
-Every edit to a pattern produces a new immutable version row preserving the prior state. Users can list versions for a pattern, view a specific historical version, and diff two versions (text-level diff of materials and instructions). Restoring an older version creates a new version (no destructive rewinds). The `edit` command never changes a pattern's display name implicitly; renaming is an explicit opt-in via an `--rename-to` flag, which protects against accidental case changes and against a `--from-file` payload whose name differs from the edit target.
+Every edit to a pattern produces a new immutable version row preserving the prior state. Users can list versions for a pattern, view a specific historical version, and diff two versions (text-level diff of materials and instructions). Restoring an older version creates a new version (no destructive rewinds). The `edit` command never changes a pattern's display name implicitly; renaming is an explicit opt-in via an `--rename-to` flag, which protects against accidental case changes and against a `--from-file` payload whose name differs from the edit target. A rename moves the pattern's canonical lookup key: the new name becomes the pattern's address for every command, the old name stops resolving, and the rename is refused if another pattern (active or soft-deleted) already holds the target name. A rename that changes only case or whitespace updates the display name and leaves the key untouched.
 
 ### FR-3 — Tagging & Search
 Tags are arbitrary strings attached to patterns. Users can list patterns filtered by any combination of tag, target species, hook size range, and full-text match against pattern name, instructions, notes, and material names. (Instructions are searched in addition to the original spec's "name, materials, and notes" because tying-step text is the most distinctive descriptor of a pattern in many libraries, and excluding it produced too many false negatives in practice.) Search results render as a Rich table with column highlighting.
@@ -59,6 +59,8 @@ The `export` command renders a single pattern (or a batch selected by `--tag` / 
 ### FR-6 — AI Suggestions
 The `suggest` command accepts required `--species` and `--season` parameters, plus optional `--water` (e.g., "Henry's Fork"), `--conditions` (e.g., "low and clear"), and `--n` for number of suggestions. It composes a structured prompt with relevant patterns from the local DB as context, calls the Claude API, and streams a recommendation with reasoning back to the terminal. Output includes pattern name (existing or proposed), hook size, key materials, and a one-sentence rationale.
 
+Suggestion results are persisted to a local JSON file (written atomically) so `flytie add --from-suggestion <n>` can create a draft pattern from suggestion *n* — name, hook size, and materials pre-filled (materials land in category `other`), with a draft notice recorded in the version history — without re-querying the API. The usual `add` inputs (positional name, `--hook`) act as overrides, and a name conflict with an existing pattern is an error, never a silent overwrite.
+
 ### FR-7 — Import / Export (Portability)
 Users can export the full database or a filtered subset to a JSON file with a documented schema, and import a JSON file (with conflict resolution: skip, overwrite, or rename). This enables sharing pattern collections across machines and contributing to community pattern sets.
 
@@ -68,6 +70,15 @@ A `config` command manages user-scoped settings: database path, default PDF temp
 The Anthropic API key is **not** a config-file-managed setting: it is read only from the `ANTHROPIC_API_KEY` environment variable and is never written to disk, so it cannot leak through the config file. This is a deliberate data-minimization choice.
 
 Three environment variables override resolved paths, primarily for testing and for users who keep their data outside the platform default location: `FLYTIE_DB_PATH` (database file), `FLYTIE_CONFIG_DIR` (config directory), and `FLYTIE_DATA_DIR` (data directory). Precedence is environment variable > config file > built-in default.
+
+### FR-9 — Soft Delete & Restore
+`delete` is a soft delete: the pattern is flagged deleted and disappears from `list`, `search`, and `view`, but its rows and full version history remain in the database. `flytie undelete <name>` restores it intact. Version history stays accessible internally for deleted patterns, so restore never loses data. Names of soft-deleted patterns remain reserved (the canonical-name uniqueness is global), so a new or renamed pattern cannot silently take over a deleted pattern's name.
+
+### FR-10 — Library Stats
+`flytie stats` prints a read-only library overview: active and deleted pattern counts, reference-table totals (materials, tags, species), top-5 usage rankings, and creation/update timeline info. It must degrade gracefully on an empty library and must report reference-table contents even when every pattern is deleted.
+
+### FR-11 — Material Maintenance
+The canonical material table dedupes exact-match names on write. Two commands handle the near-miss duplicates that exact matching cannot: `flytie material merge <from> <to>` rewrites every reference (across patterns and version history) from one material to another, with `--dry-run`; `flytie material dedupe` discovers likely duplicates via fuzzy matching (Levenshtein edit distance + Jaccard token overlap, tunable `--threshold`) and walks the user through interactive merges. See §8 for the risk this mitigates.
 
 ---
 
@@ -122,6 +133,8 @@ Two design decisions made during implementation are worth recording here because
 
 Post-v0.1.0 development follows the same phase-shaped workflow for features and a hardening-pass shape for quality releases. See `ROADMAP.md` for planned work.
 
+v0.2.2 was a pure hardening release with no new features: a four-reviewer full-project review (skeptical senior engineer, testing/CI specialist, spec-drift lens, contributor-friction lens) produced findings fixed across four impact-ranked slices — user-facing breakage (the `--rename-to` canonical-key fix, doc corrections), CI/test integrity (the `FLYTIE_TEST_COLUMNS` narrow-terminal stress gate replacing a silently no-op `COLUMNS=80` gate), spec backports (FR-9 through FR-11), and data-layer robustness (import validation, half-migrated-schema refusal, merge reporting, dedupe scoring guards).
+
 ---
 
 ## 7. Testing Strategy
@@ -134,7 +147,7 @@ Several testing contracts are enforced structurally rather than by convention: a
 
 ## 8. Risks & Mitigations
 
-**WeasyPrint native dependencies.** Pango and Cairo can be painful on Windows. Current state: CI tests on Linux + macOS, the README documents WSL for Windows, and `flytie export --html` provides a no-native-deps fallback that produces a styled standalone HTML card printable from a browser.
+**WeasyPrint native dependencies.** Pango and Cairo can be painful on Windows. Current state: CI tests on Linux across Python 3.10/3.11/3.12 (a macOS CI leg is noted in `ROADMAP.md` as a possible addition), the README documents WSL as the recommended Windows path, and `flytie export --html` provides a no-native-deps fallback that produces a styled standalone HTML card printable from a browser.
 
 **Material deduplication.** "Size 14 dry fly hook" and "14 dry hook" are the same thing to a tier but different strings to a database. Current state: canonical material table with exact-match dedup on write (v0.1.0), `flytie material merge` for manual dedup (v0.2.0), `flytie material dedupe` for edit-distance-based candidate discovery (v0.2.1). Semantic matching via Claude API is a candidate for a future release (see `ROADMAP.md`).
 

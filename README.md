@@ -26,7 +26,9 @@ network access unless you explicitly run `flytie suggest`.
 - **Get AI suggestions** — `flytie suggest` sends your species, season, and
   water conditions to Claude and streams back fly recommendations grounded in
   your own library. Patterns you already own are flagged; new ones are labeled
-  so you know what to tie or buy.
+  so you know what to tie or buy. Suggestions are saved, so
+  `flytie add --from-suggestion <n>` turns one into a draft pattern —
+  name, hook, and materials pre-filled.
 - **Version automatically** — every edit creates an immutable snapshot.
   Diff any two versions, view the full history, and restore an old one.
   Diffs sort materials alphabetically so reordering alone produces no noise.
@@ -69,8 +71,9 @@ sudo apt install libpango-1.0-0 libpangoft2-1.0-0
 # Fedora / RHEL
 sudo dnf install pango
 
-# Windows
-# See https://doc.courtbouillon.org/weasyprint/stable/first_steps.html
+# Windows — easiest path is WSL (Ubuntu), then: sudo apt install libpango-1.0-0
+# For native Windows, see:
+# https://doc.courtbouillon.org/weasyprint/stable/first_steps.html
 ```
 
 If installing the native libraries isn't an option on your platform, stick
@@ -123,13 +126,14 @@ Full guides live in [`docs/`](docs/index.md):
 - [Shopping list cookbook](docs/shopping-list.md)
 - [AI suggestions](docs/ai-suggestions.md)
 - [Migrating from a notebook](docs/migrating-from-notebook.md)
+- [Pattern file format](docs/pattern-file-format.md) — the JSON/TOML format `--from-file` accepts
 - [Export JSON schema](docs/json-schema.md)
 
 Every command also has built-in help: `flytie <command> --help`.
 
 ## Project status
 
-Current release: `0.2.1`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
+Current release: `0.2.2`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
 release history.
 
 ## Development

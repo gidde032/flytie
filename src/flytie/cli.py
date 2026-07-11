@@ -293,15 +293,16 @@ def add(
         "--material",
         "-m",
         help=(
-            "A material line as `name,category,quantity,unit` — only `name` is "
-            "required. Repeatable. Valid categories: thread, hook, hackle, "
-            "dubbing, flash, body, tail, wing, head, bead, weight, adhesive, other."
+            "A comma-separated material line: name, category, quantity, unit — "
+            "only name is required (spaces after commas are fine). Repeatable. "
+            "Valid categories: thread, hook, hackle, dubbing, flash, body, "
+            "tail, wing, head, bead, weight, adhesive, other."
         ),
     ),
     from_file: Path | None = typer.Option(
         None,
         "--from-file",
-        help="Load fields from a JSON or TOML pattern file. See docs/pattern-file-format.md.",
+        help="Load fields from a JSON or TOML pattern file. See pattern-file-format.md in docs/.",
     ),
     from_suggestion: int | None = typer.Option(
         None,
@@ -835,7 +836,7 @@ def edit(
     from_file: Path | None = typer.Option(
         None,
         "--from-file",
-        help="Load fields from a JSON or TOML pattern file. See docs/pattern-file-format.md.",
+        help="Load fields from a JSON or TOML pattern file. See pattern-file-format.md in docs/.",
     ),
 ) -> None:
     """Edit a pattern. Creates a new immutable version."""
@@ -1026,20 +1027,27 @@ def material_merge(
         except ValueError as exc:
             raise _fail(str(exc), code=2) from exc
 
+    all_affected = [
+        *result.affected_patterns,
+        *(f"{p} (deleted)" for p in result.deleted_affected_patterns),
+    ]
     if dry_run:
         console.print(f'Would merge "{result.from_name}" → "{result.to_name}"')
-        if result.affected_patterns:
-            console.print(f"  Affected patterns: {', '.join(result.affected_patterns)}")
+        if all_affected:
+            console.print(f"  Affected patterns: {', '.join(all_affected)}")
         else:
             console.print("  Affected patterns: none")
         console.print(f"  Version rows: {result.version_rows}")
     else:
-        n = len(result.affected_patterns)
+        n = len(result.affected_patterns) + len(result.deleted_affected_patterns)
         console.print(
             f'[green]Merged[/green] "{result.from_name}" → "{result.to_name}" '
             f"(affected {n} {'pattern' if n == 1 else 'patterns'}, "
             f"{result.version_rows} version rows)"
         )
+        if result.deleted_affected_patterns:
+            labeled = ", ".join(f"{p} (deleted)" for p in result.deleted_affected_patterns)
+            console.print(f"  Also affected (deleted): {labeled}")
     for w in result.warnings:
         console.print(f"[yellow]Warning:[/yellow] {w}")
 
@@ -1050,6 +1058,8 @@ def material_dedupe(
         0.6,
         "--threshold",
         "-t",
+        min=0.0,
+        max=1.0,
         help="Minimum similarity score (0-1) for a pair to be considered a candidate.",
     ),
     dry_run: bool = typer.Option(
@@ -1107,12 +1117,15 @@ def material_dedupe(
                 console.print(f"[red]Merge failed:[/red] {exc}")
                 continue
         merged_away.add(from_name)
-        n = len(result.affected_patterns)
+        n = len(result.affected_patterns) + len(result.deleted_affected_patterns)
         console.print(
             f'  [green]Merged[/green] "{result.from_name}" → "{result.to_name}" '
             f"({n} {'pattern' if n == 1 else 'patterns'}, "
             f"{result.version_rows} version rows)"
         )
+        if result.deleted_affected_patterns:
+            labeled = ", ".join(f"{p} (deleted)" for p in result.deleted_affected_patterns)
+            console.print(f"    Also affected (deleted): {labeled}")
         for w in result.warnings:
             console.print(f"  [yellow]Warning:[/yellow] {w}")
         merged += 1

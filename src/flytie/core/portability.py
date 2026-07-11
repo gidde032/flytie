@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, selectinload
@@ -91,6 +91,25 @@ class ExportVersion(BaseModel):
     # `parse_document` since it is genuinely ambiguous.
     is_current: bool = False
     materials: list[ExportMaterial] = Field(default_factory=list)
+
+    @field_validator("hook_size")
+    @classmethod
+    def _hook_size_not_blank(cls, value: str) -> str:
+        """Reject a blank/whitespace-only hook_size and normalize via strip.
+
+        `core.patterns.create_pattern`/`edit_pattern` both reject a blank
+        hook_size; without this, the JSON import path could write a
+        `PatternVersion` row that bypasses that invariant. Rejecting here —
+        at parse, not at write — means a bad file fails the whole import up
+        front, consistent with `parse_document`'s other up-front rejections
+        (duplicate names, multiple `is_current` flags). Export always
+        supplies an already-stripped value (the DB never stores a blank
+        hook_size), so stripping here doesn't change exported round-trips.
+        """
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("hook_size cannot be blank.")
+        return stripped
 
 
 class ExportPattern(BaseModel):

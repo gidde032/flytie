@@ -80,18 +80,19 @@ flytie add --from-suggestion 2
 This creates the pattern with the suggestion's name, hook size, and materials
 pre-filled. The pattern is marked as a **draft** (a note in the version
 history indicates it originated from an AI suggestion) so you know to review
-and refine it. Materials are added with category `other` — use `flytie edit`
-or `flytie material categorize` (when available) to assign proper categories.
+and refine it. Materials are added with category `other` — use `flytie edit` to assign
+proper categories (a future `flytie material categorize` command will
+automate this).
 
 You can override the name or hook size at add time:
 
 ```bash
-flytie add --from-suggestion 2 --name "My Custom PMD" --hook-size 16
+flytie add "My Custom PMD" --from-suggestion 2 --hook 16
 ```
 
 If a pattern with the same name already exists, the command exits with an
-error rather than silently overwriting — rename with `--name` or edit the
-existing pattern instead.
+error rather than silently overwriting — pass a different name as the
+positional argument or edit the existing pattern instead.
 
 **Important:** `--from-suggestion` references the *last* `suggest` run only.
 If you run `suggest` again, the previous results are gone. Act on the

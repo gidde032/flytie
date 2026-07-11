@@ -52,6 +52,12 @@ jobs:
         # the kind of "the gate runs on PRs but not on releases" drift
         # the v0.1.2 dual-lens audit caught.
         env:
+          # Both vars needed: FLYTIE_TEST_COLUMNS drives the autouse
+          # CliRunner fixture in tests/conftest.py (plain COLUMNS=80 is
+          # overridden by that fixture's wide default and gates nothing —
+          # v0.2.2 finding C2); COLUMNS covers Rich output that doesn't
+          # flow through CliRunner.
+          FLYTIE_TEST_COLUMNS: "80"
           COLUMNS: "80"
         run: pytest --cov=src/flytie --cov-report=term-missing
 

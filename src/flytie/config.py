@@ -21,6 +21,11 @@ from platformdirs import user_config_dir, user_data_dir
 
 if sys.version_info >= (3, 11):
     import tomllib
+# The 3.10-only tomli branch is deliberately excluded from coverage: the
+# dev sandbox and the coverage-gated CI leg run 3.11+, where this branch
+# can never execute, so it would read as a permanent coverage hole. The
+# 3.10 CI matrix leg still *executes* it (an ImportError would fail there);
+# it just isn't counted. Revisit if the coverage gate ever runs on 3.10.
 else:  # pragma: no cover - py310 path
     import tomli as tomllib
 

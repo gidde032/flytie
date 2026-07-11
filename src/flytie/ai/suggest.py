@@ -283,6 +283,11 @@ def _status_error_message(exc: object) -> str:
 
     Crucially, this never interpolates the raw exception (which can carry
     request metadata) and never touches the API key.
+
+    Codes not explicitly handled above fall back to a generic message split
+    by status-code class: a 4xx points at something in the request or the
+    key, so the message asks the user to check those; a 5xx is a problem on
+    Anthropic's end, so the message says so and suggests retrying instead.
     """
     code = getattr(exc, "status_code", None)
     if code in (401, 403):
@@ -294,6 +299,11 @@ def _status_error_message(exc: object) -> str:
         return "The Anthropic API rate limit was exceeded (HTTP 429). Wait a moment and try again."
     if code == 529:
         return "The Anthropic API is temporarily overloaded (HTTP 529). Please try again shortly."
+    if isinstance(code, int) and 500 <= code < 600:
+        return (
+            f"The Anthropic API had a problem on its end (HTTP {code}). "
+            "This isn't something you can fix locally — wait a moment and try again."
+        )
     return (
         f"The Anthropic API rejected the request (HTTP {code}). "
         "Check that your ANTHROPIC_API_KEY is valid and has available credit."

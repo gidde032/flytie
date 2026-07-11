@@ -62,21 +62,37 @@ def jaccard_similarity(a: str, b: str) -> float:
     """Token-level Jaccard similarity in [0, 1].
 
     Splits on whitespace (names are already normalised to lowercase with
-    collapsed whitespace by :func:`~flytie.models.normalize_name`).
+    collapsed whitespace by :func:`~flytie.models.normalize_name`). An empty
+    string (on either or both sides) shares no tokens with anything — it is
+    *not* treated as identical to another empty string, since that inflated
+    dedupe candidates for blank/whitespace-only material names.
     """
     set_a = set(a.split())
     set_b = set(b.split())
-    if not set_a and not set_b:
-        return 1.0
+    if not set_a or not set_b:
+        return 0.0
     union = set_a | set_b
-    if not union:
-        return 1.0  # pragma: no cover - both empty handled above
     return len(set_a & set_b) / len(union)
 
 
 def combined_similarity(a: str, b: str) -> float:
-    """Max of Levenshtein ratio and Jaccard similarity."""
-    return max(levenshtein_ratio(a, b), jaccard_similarity(a, b))
+    """Max of Levenshtein ratio and Jaccard token overlap.
+
+    Short names inflate false positives when scored on Levenshtein alone —
+    "silk" and "silt" differ by a single character out of four, clearing the
+    default 0.6 threshold despite being unrelated materials. When the
+    shorter of the two (already-normalised) names is under 5 characters, the
+    Levenshtein component is excluded from the max: only an exact match or
+    Jaccard token overlap can qualify the pair. Longer names are unaffected
+    — a one-character typo in a longer name is unlikely to also spell a
+    different real word, so Levenshtein stays a useful signal there.
+    """
+    if a == b:
+        return 1.0
+    jaccard = jaccard_similarity(a, b)
+    if min(len(a), len(b)) < 5:
+        return jaccard
+    return max(levenshtein_ratio(a, b), jaccard)
 
 
 # ---------------------------------------------------------------------------

@@ -61,10 +61,11 @@ def test_smoke_marker_collects_exactly_five_happy_path_tests() -> None:
             "-m",
             "smoke",
             "-q",
+            # `no:cacheprovider` disables cache writes entirely, so no
+            # cache_dir override is needed (a hardcoded /tmp path here
+            # was a concurrency hazard *and* a no-op — v0.2.2 finding M7).
             "-p",
             "no:cacheprovider",
-            "-o",
-            "cache_dir=/tmp/.pytest_cache",
         ],
         cwd=_project_root(),
         capture_output=True,
@@ -89,14 +90,20 @@ def test_smoke_marker_collects_exactly_five_happy_path_tests() -> None:
     )
 
 
-def test_smoke_suite_runs_under_five_seconds() -> None:
+def test_smoke_suite_runs_under_ten_seconds() -> None:
     """The smoke suite is supposed to be quick local feedback — pin a budget.
 
-    The spec frames smoke as "intended for quick local feedback." Five
+    The spec frames smoke as "intended for quick local feedback." Ten
     seconds is a generous upper bound (the current suite finishes in ~3s
     on the dev sandbox); the budget mostly guards against someone
     accidentally tagging a slow test (PDF rendering, AI streaming, a
     full-suite round-trip) with `@pytest.mark.smoke`.
+
+    Budget raised 5s -> 10s in v0.2.2 (review finding M7): this test
+    stacks a second interpreter + pytest-collection startup on top of the
+    suite itself, which made 5s flake-prone on loaded/shared CI runners.
+    The budget is a tripwire for accidentally-tagged slow tests, not a
+    performance benchmark — 10s still catches those unambiguously.
     """
     import time
 
@@ -109,10 +116,11 @@ def test_smoke_suite_runs_under_five_seconds() -> None:
             "-m",
             "smoke",
             "-q",
+            # `no:cacheprovider` disables cache writes entirely, so no
+            # cache_dir override is needed (a hardcoded /tmp path here
+            # was a concurrency hazard *and* a no-op — v0.2.2 finding M7).
             "-p",
             "no:cacheprovider",
-            "-o",
-            "cache_dir=/tmp/.pytest_cache",
         ],
         cwd=_project_root(),
         capture_output=True,
@@ -123,11 +131,11 @@ def test_smoke_suite_runs_under_five_seconds() -> None:
     assert result.returncode == 0, (
         f"smoke run failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
-    # 5 seconds is the budget. Subprocess overhead + pytest startup eats
-    # ~1s of that on a slow machine, so the actual test wall-clock has to
-    # stay well under 4s for the budget to hold.
-    assert elapsed < 5.0, (
-        f"Smoke suite took {elapsed:.2f}s — over the 5s "
+    # 10 seconds is the budget. Subprocess overhead + pytest startup eats
+    # ~1s of that on a slow machine; the margin absorbs shared-runner
+    # noise while still tripping on any genuinely slow test.
+    assert elapsed < 10.0, (
+        f"Smoke suite took {elapsed:.2f}s — over the 10s "
         f'"quick local feedback" budget. '
         f"Either a slow test was tagged @pytest.mark.smoke or the existing "
         f"smoke tests have grown. Output:\n{result.stdout}"

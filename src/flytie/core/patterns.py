@@ -337,8 +337,35 @@ def edit_pattern(session: Session, name: str, payload: PatternInput) -> Pattern:
         _sync_tags(session, pattern, payload.tags)
     if payload.species is not None:
         _sync_species(session, pattern, payload.species)
-    # Allow renames via display name; canonical key is preserved.
-    pattern.name_display = payload.name.strip() or pattern.name_display
+    # Allow renames via display name. If the new name normalizes to a
+    # different canonical key, this is a real rename: the key must move too
+    # (every command resolves patterns by name_key), subject to the same
+    # global-uniqueness check `create_pattern` enforces. If the new name
+    # normalizes to the same key (case/whitespace-only tweaks, or no rename
+    # at all), only the display name changes — the key is already unique to
+    # this pattern, so no collision check is needed.
+    stripped_name = payload.name.strip()
+    if stripped_name and not normalize_name(stripped_name):
+        # Non-empty input that normalizes to nothing (all punctuation, e.g.
+        # "!!!") would otherwise silently fall through to the display-only
+        # branch below and rename-in-place to an unaddressable key. Mirror
+        # create_pattern's empty-key rejection instead of allowing that.
+        raise ValueError("Pattern name cannot be empty.")
+    new_name = stripped_name or pattern.name_display
+    new_key = normalize_name(new_name)
+    if new_key and new_key != pattern.name_key:
+        existing = session.scalar(select(Pattern).where(Pattern.name_key == new_key))
+        if existing is not None:
+            if existing.is_deleted:
+                raise DuplicatePatternError(
+                    f"Pattern {new_name!r} already exists (soft-deleted) — "
+                    "run `flytie undelete` to restore it."
+                )
+            raise DuplicatePatternError(f"Pattern {new_name!r} already exists.")
+        pattern.name_key = new_key
+        pattern.name_display = new_name
+    else:
+        pattern.name_display = new_name
     session.flush()
     return pattern
 
@@ -416,11 +443,20 @@ class MaterialNotFoundError(Exception):
 
 @dataclass
 class MergeResult:
-    """Outcome of a material merge operation."""
+    """Outcome of a material merge operation.
+
+    `affected_patterns` lists active patterns whose rows were rewritten.
+    `deleted_affected_patterns` lists soft-deleted patterns whose rows were
+    *also* rewritten — the merge is global (it doesn't skip a version just
+    because its owning pattern is soft-deleted), but the two lists are kept
+    separate so callers can label deleted patterns distinctly rather than
+    silently folding them into the active count (M5 review finding).
+    """
 
     from_name: str
     to_name: str
     affected_patterns: list[str] = field(default_factory=list)
+    deleted_affected_patterns: list[str] = field(default_factory=list)
     version_rows: int = 0
     warnings: list[str] = field(default_factory=list)
 
@@ -466,8 +502,12 @@ def merge_materials(
         .all()
     )
 
-    # Track which active patterns are affected (for display)
+    # Track which patterns are affected (for display) — active and
+    # soft-deleted are tracked separately so the caller can label deleted
+    # ones distinctly. Both sets' rows are rewritten by this loop; the
+    # merge itself does not skip soft-deleted patterns.
     affected_pattern_ids: set[int] = set()
+    deleted_pattern_ids: set[int] = set()
     warnings: list[str] = []
     rows_affected = 0
 
@@ -477,8 +517,11 @@ def merge_materials(
             continue  # defensive — shouldn't happen with FK constraints
 
         pattern = session.get(Pattern, version.pattern_id)
-        if pattern is not None and not pattern.is_deleted:
-            affected_pattern_ids.add(pattern.id)
+        if pattern is not None:
+            if pattern.is_deleted:
+                deleted_pattern_ids.add(pattern.id)
+            else:
+                affected_pattern_ids.add(pattern.id)
 
         # Check for duplicate: does this version already have the target material?
         existing_target = session.scalar(
@@ -525,24 +568,29 @@ def merge_materials(
         session.delete(from_mat)
         session.flush()
 
-    # Resolve affected pattern names
-    affected_names: list[str] = []
-    if affected_pattern_ids:
-        patterns = (
+    # Resolve affected pattern names — active and soft-deleted separately.
+    def _names_for(ids: set[int]) -> list[str]:
+        if not ids:
+            return []
+        rows = (
             session.execute(
                 select(Pattern.name_display)
-                .where(Pattern.id.in_(affected_pattern_ids))
+                .where(Pattern.id.in_(ids))
                 .order_by(Pattern.name_display)
             )
             .scalars()
             .all()
         )
-        affected_names = list(patterns)
+        return list(rows)
+
+    affected_names = _names_for(affected_pattern_ids)
+    deleted_names = _names_for(deleted_pattern_ids)
 
     return MergeResult(
         from_name=from_mat.canonical_name,
         to_name=to_mat.canonical_name,
         affected_patterns=affected_names,
+        deleted_affected_patterns=deleted_names,
         version_rows=rows_affected,
         warnings=warnings,
     )

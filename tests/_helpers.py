@@ -6,6 +6,8 @@ Module-level helpers used by multiple test files. Fixtures live in
 
 from __future__ import annotations
 
+import re
+
 from typer.testing import CliRunner
 
 from flytie.cli import app
@@ -26,8 +28,15 @@ def cli_help(command: list[str], runner: CliRunner | None = None) -> str:
     belt-and-suspenders backstop for cells that Rich wraps even at 200
     columns (e.g., a very long help cell or a help line whose markup forces
     a line break). See `ai-development-practices.md` §4 for the lesson.
+
+    Box-drawing characters (Rich panel borders) are stripped before
+    normalization: under the narrow-terminal stress gate
+    (`FLYTIE_TEST_COLUMNS=80`), a phrase that wraps across panel lines
+    otherwise reassembles as `already │ │ owned` and substring assertions
+    miss it (v0.2.2 finding C2).
     """
     r = runner or CliRunner()
     result = r.invoke(app, [*command, "--help"])
     assert result.exit_code == 0, result.stdout + result.stderr
-    return " ".join(result.stdout.split())
+    stripped = re.sub(r"[─-╿]", " ", result.stdout)
+    return " ".join(stripped.split())

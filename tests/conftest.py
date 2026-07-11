@@ -36,6 +36,7 @@ don't need to migrate.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -94,8 +95,17 @@ def _wide_cli_runner_env(monkeypatch: pytest.MonkeyPatch) -> None:
     want to assert *against* narrow-terminal behavior can pass
     `env={"COLUMNS": "80"}` (or any other value) explicitly — the
     user-supplied env wins. See `ai-development-practices.md` §4.
+
+    Narrow-terminal stress gate: if `FLYTIE_TEST_COLUMNS` is set in the
+    outer environment, it replaces the 200 default. This is how the
+    pre-push hook and the CI stress leg (`FLYTIE_TEST_COLUMNS=80 pytest`)
+    actually exercise narrow-terminal wrapping — a plain outer `COLUMNS=80`
+    cannot, because this fixture's default would override it for every
+    invocation (v0.2.2 review finding: the old `COLUMNS=80` gates were
+    silent no-ops). Per-test explicit `env` still wins over both.
     """
     original_invoke = CliRunner.invoke
+    default_columns = os.environ.get("FLYTIE_TEST_COLUMNS", "200")
 
     def wide_invoke(
         self: CliRunner,
@@ -103,12 +113,24 @@ def _wide_cli_runner_env(monkeypatch: pytest.MonkeyPatch) -> None:
         env: dict[str, str] | None = None,
         **kwargs: Any,
     ) -> Any:
-        merged = {"COLUMNS": "200"}
+        merged = {"COLUMNS": default_columns}
         if env:
             merged.update(env)
         return original_invoke(self, *args, env=merged, **kwargs)
 
     monkeypatch.setattr(CliRunner, "invoke", wide_invoke)
+
+
+@pytest.fixture(autouse=True)
+def _no_ambient_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Strip `ANTHROPIC_API_KEY` from the environment for every test.
+
+    Guarantees structurally that a real key exported in a contributor's
+    shell can never leak into a test run or change test behavior. Tests
+    that need a key set one explicitly with `monkeypatch.setenv` (the
+    test-body call runs after this fixture, so it wins).
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
 
 
 @pytest.fixture

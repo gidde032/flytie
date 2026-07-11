@@ -69,7 +69,8 @@ class TestJaccardSimilarity:
         assert abs(score - 1 / 3) < 0.01
 
     def test_empty_strings(self) -> None:
-        assert jaccard_similarity("", "") == 1.0
+        """M8 (v0.2.2 fix): empty/empty is no longer treated as identical."""
+        assert jaccard_similarity("", "") == 0.0
 
 
 class TestCombinedSimilarity:
@@ -303,8 +304,10 @@ class TestDedupeCLI:
         assert r.exit_code == 0
         assert "Merged" in r.stdout
         assert "discarded quantity" in r.stdout
-        # "units differ" is also in the warning but wraps at COLUMNS=80,
-        # so we check a shorter fragment that stays on one line.
+        # "units differ" is also in the warning but wraps under the
+        # narrow-terminal stress gate (FLYTIE_TEST_COLUMNS=80 — see
+        # conftest._wide_cli_runner_env), so we check a shorter fragment
+        # that stays on one line at any gated width.
         assert "differ" in r.stdout
 
     def test_stale_candidate_skipped_after_merge(self, env_dirs) -> None:

@@ -9,13 +9,13 @@
 #
 #   pre-push — slower gates that run on `git push`. The push fails if
 #             the gate fails. Currently this is the full pytest suite
-#             with COLUMNS=80 forced, which catches the class of
-#             Rich-wrap test fragility documented in
-#             `ai-development-practices/assessment.md` §4 — CLI output that wraps
-#             at a narrow terminal width on CI and breaks substring
-#             assertions like `assert "X Y" in r.stdout`. Running the
-#             suite at COLUMNS=80 locally surfaces those failures
-#             before they reach GitHub Actions.
+#             with FLYTIE_TEST_COLUMNS=80, which makes the autouse
+#             CliRunner fixture in tests/conftest.py default every CLI
+#             invocation to an 80-column terminal — catching the class
+#             of Rich-wrap test fragility documented in
+#             `ai-development-practices/assessment.md` §4. A plain
+#             COLUMNS=80 is NOT enough: the fixture's wide default
+#             would silently override it (v0.2.2 review finding C2).
 #
 # Install once after cloning:
 #
@@ -60,18 +60,22 @@ repos:
   - repo: local
     hooks:
       - id: pytest-narrow
-        name: pytest at COLUMNS=80 (catches Rich-wrap fragility)
+        name: pytest at FLYTIE_TEST_COLUMNS=80 (catches Rich-wrap fragility)
         # Force a narrow terminal so any latent Rich-wrap test
-        # fragility surfaces locally before it reaches CI. The full
+        # fragility surfaces locally before it reaches CI. The
+        # FLYTIE_TEST_COLUMNS variable is read by the autouse CliRunner
+        # fixture in tests/conftest.py and replaces its wide (200)
+        # default; plain COLUMNS=80 would be overridden by that fixture
+        # and gate nothing (v0.2.2 finding C2). COLUMNS=80 is kept for
+        # any Rich output that doesn't flow through CliRunner. The full
         # suite runs in ~40 seconds; we're trading wait time at push
         # for a closed class of CI-only failures. See
         # ai-development-practices/assessment.md §4 for the lesson.
         #
         # `env` is Unix-only; Windows contributors using cmd will need
-        # `set COLUMNS=80 && pytest ...` or to run pre-commit under WSL.
-        # Spec NFR §4 already documents WSL as the recommended Windows
-        # path for the project.
-        entry: env COLUMNS=80 pytest -q -p no:cacheprovider --tb=line
+        # `set FLYTIE_TEST_COLUMNS=80 && pytest ...` or WSL. Spec NFR §4
+        # already documents WSL as the recommended Windows path.
+        entry: env FLYTIE_TEST_COLUMNS=80 COLUMNS=80 pytest -q -p no:cacheprovider --tb=line
         language: system
         pass_filenames: false
         # Pre-push stage only. Running pytest on every commit would
