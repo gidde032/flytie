@@ -34,7 +34,7 @@
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.0
+    rev: v0.15.20
     hooks:
       # `ruff format` is Black-compatible and is the project's
       # canonical formatter. Modifies files in place.
@@ -46,7 +46,7 @@ repos:
         args: [--fix]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       # Standard hygiene. All fast and non-controversial.
       - id: trailing-whitespace
