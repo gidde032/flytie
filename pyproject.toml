@@ -74,10 +74,10 @@ dev = [
 flytie = "flytie.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/finngidden/flytie"
-Documentation = "https://github.com/finngidden/flytie#readme"
-Changelog = "https://github.com/finngidden/flytie/blob/main/CHANGELOG.md"
-Issues = "https://github.com/finngidden/flytie/issues"
+Homepage = "https://github.com/gidde032/flytie"
+Documentation = "https://github.com/gidde032/flytie#readme"
+Changelog = "https://github.com/gidde032/flytie/blob/main/CHANGELOG.md"
+Issues = "https://github.com/gidde032/flytie/issues"
 
 [tool.hatch.version]
 # Read __version__ from the package itself, so it stays the single source
@@ -107,7 +107,7 @@ include = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers --ignore=tests/test_patterns_repo_old.py --ignore=tests/test_review_fixes_old.py"
+addopts = "-ra --strict-markers"
 markers = [
     "smoke: minimal happy-path tests run before commit",
 ]
@@ -116,14 +116,6 @@ markers = [
 source = ["src/flytie"]
 branch = true
 omit = [
-    # Inert placeholders from the Phase 3 FUSE recovery (see handoff.md
-    # known issue #5). They're already excluded from pytest collection
-    # (`addopts --ignore=...`) and ruff lint ([tool.ruff].exclude). The
-    # same exclusion belongs here so they don't drag the coverage floor
-    # down — they contain zero shipping code.
-    "src/flytie/*_old.py",
-    "src/flytie/core/*_old.py",
-    "src/flytie/migrations/*_old.py",
     # `__main__.py` is a 5-line entry-point wrapper exercised only via
     # `python -m flytie`; testing it adds no real coverage value relative
     # to the existing `flytie` console_script tests in `test_cli_*.py`.
@@ -152,17 +144,7 @@ fail_under = 85
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-# Stale FUSE-locked placeholders left over from the dev sandbox.
-exclude = [
-    "tests/test_patterns_repo_old.py",
-    "tests/test_review_fixes_old.py",
-    "src/flytie/migrations/env_old.py",
-    "src/flytie/cli_old.py",
-    "src/flytie/render_old.py",
-    "src/flytie/core/shop_old.py",
-    "src/flytie/core/parsing_old.py",
-    "src/flytie/core/versions_old.py",
-]
+exclude = []
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "RUF"]

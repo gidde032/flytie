@@ -7,7 +7,7 @@ the pre-commit hooks, and you're set.
 ## Local setup
 
 ```bash
-git clone https://github.com/finngidden/flytie.git
+git clone https://github.com/gidde032/flytie.git
 cd flytie
 pip install -e ".[dev,pdf,ai]"
 pre-commit install --hook-type pre-commit --hook-type pre-push
@@ -203,7 +203,7 @@ Internal-only docs (gitignored, kept locally for the project owner):
 
 ## Reporting issues
 
-Open an issue at [github.com/finngidden/flytie/issues](https://github.com/finngidden/flytie/issues).
+Open an issue at [github.com/gidde032/flytie/issues](https://github.com/gidde032/flytie/issues).
 Include the output of `flytie info` and `flytie --version`, the command you
 ran, the output you got, and what you expected to see. If the issue
 involves the PDF or AI paths, mention which extras you have installed.

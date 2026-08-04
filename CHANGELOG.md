@@ -373,10 +373,10 @@ manager for fly tying patterns.
   TOML file; `FLYTIE_CONFIG_DIR`, `FLYTIE_DATA_DIR`, and `FLYTIE_DB_PATH`
   override resolved locations.
 
-[Unreleased]: https://github.com/finngidden/flytie/compare/v0.2.2...HEAD
-[0.2.2]: https://github.com/finngidden/flytie/compare/v0.2.1...v0.2.2
-[0.2.1]: https://github.com/finngidden/flytie/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/finngidden/flytie/compare/v0.1.2...v0.2.0
-[0.1.2]: https://github.com/finngidden/flytie/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/finngidden/flytie/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/finngidden/flytie/releases/tag/v0.1.0
+[Unreleased]: https://github.com/gidde032/flytie/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/gidde032/flytie/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/gidde032/flytie/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/gidde032/flytie/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/gidde032/flytie/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/gidde032/flytie/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/gidde032/flytie/releases/tag/v0.1.0
