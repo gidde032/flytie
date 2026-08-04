@@ -30,6 +30,8 @@ def test_handoff_stays_within_its_budget() -> None:
     handoff.md.
     """
     handoff = _project_root() / "handoff.md"
+    if not handoff.is_file():
+        pytest.skip("handoff.md is gitignored and not present in CI")
     lines = handoff.read_text(encoding="utf-8").splitlines()
     assert len(lines) <= 200, (
         f"handoff.md is {len(lines)} lines — over the 200-line budget. "
