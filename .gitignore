@@ -57,6 +57,9 @@ subagent-brief-templates.md
 project-FAQ.md
 v0.2.0-phase1-spec.md
 .claude/
+.agents/
+AGENTS.md
+.migration-workspace/
 
 # --- Editor / OS ---
 .DS_Store
