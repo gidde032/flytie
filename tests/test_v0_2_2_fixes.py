@@ -566,6 +566,7 @@ def test_suite_hermetic_against_terminal_forcing_env() -> None:
         **os.environ,
         "FORCE_COLOR": "1",
         "PY_COLORS": "1",
+        "GITHUB_ACTIONS": "true",
         "TERMINAL_WIDTH": "129",
         "TTY_COMPATIBLE": "1",
         "COLORTERM": "truecolor",

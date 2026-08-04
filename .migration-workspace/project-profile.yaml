@@ -1,0 +1,288 @@
+profile_version: 1
+
+ratification:
+  status: approved
+  approved_by: finngidden
+  approved_on: "2026-08-04"
+
+project:
+  name: flytie
+  local_path: /Users/finngidden/Projects/flytie
+  github_repository: gidde032/flytie
+  remote_url: https://github.com/gidde032/flytie.git
+  default_branch: main
+  current_visibility: public
+  intended_visibility: public
+  maintainer_model: solo
+  product_status: active_development
+
+migration:
+  branch: docs/github-migration
+  milestone: v0.3.0
+  objective: >
+    Consolidate scattered local planning into GitHub Issues with milestones,
+    fix broken GitHub owner references, add issue/PR templates, curated labels,
+    and ensure public documentation reflects current state through v0.2.2.
+  checkpoint_policy:
+    profile_ratification: true
+    exceptional_prerequisite_only: true
+    final_draft_pr_review: true
+    merge_automatically: false
+
+git_preflight:
+  snapshot:
+    captured_on: "2026-08-04"
+    head_sha: f4306e1c66e0e595b2ca9ade406207c529ddcf47
+    working_tree: dirty  # tests/test_v0_2_2_fixes.py modified; .agents/ and AGENTS.md untracked
+    local_default_ahead: 0
+    local_default_behind: 0
+  verify_snapshot_before_action: true
+  unpublished_history_strategy: stash_dirty_tree
+  combine_product_work_with_migration: false
+
+documentation:
+  public_authorities:
+    README.md:
+      role: project_landing
+      current_state: reviewed_v022
+      action: update_owner_references
+    CONTRIBUTING.md:
+      role: contributor_guide
+      current_state: reviewed_v022
+      action: update_owner_references
+    CHANGELOG.md:
+      role: release_history
+      current_state: current_through_v022
+      action: fix_owner_links
+    LICENSE:
+      role: license
+      current_state: correct_mit_2026
+      action: none
+    fly-tying-tracker-spec.md:
+      role: functional_specification
+      current_state: backported_through_v022
+      action: none
+    docs/index.md:
+      role: docs_hub
+      current_state: reviewed_v022
+      action: none
+    docs/commands.md:
+      role: command_reference
+      current_state: reviewed_v022
+      action: none
+    docs/quickstart.md:
+      role: getting_started
+      current_state: reviewed_v022
+      action: none
+    docs/shopping-list.md:
+      role: feature_guide
+      current_state: reviewed_v022
+      action: none
+    docs/ai-suggestions.md:
+      role: feature_guide
+      current_state: reviewed_v022
+      action: none
+    docs/migrating-from-notebook.md:
+      role: migration_guide
+      current_state: reviewed_v022
+      action: none
+    docs/json-schema.md:
+      role: technical_reference
+      current_state: reviewed_v022
+      action: none
+    docs/pattern-file-format.md:
+      role: technical_reference
+      current_state: reviewed_v022
+      action: none
+  local_internal_authorities:
+    handoff.md:
+      role: agent_handoff
+      policy: local_only_gitignored
+    CLAUDE.md:
+      role: agent_operating_instructions
+      policy: local_only_gitignored
+    ROADMAP.md:
+      role: version_planning
+      policy: local_only_gitignored
+      action_after_migration: update_with_issue_urls
+    ai-development-practices/:
+      role: article_source_material
+      policy: local_only_gitignored
+    collaboration-retrospective/:
+      role: article_source_material
+      policy: local_only_gitignored
+    phase-summaries/:
+      role: historical_evidence
+      policy: local_only_gitignored
+    pending-lessons.md:
+      role: release_batching_scratch
+      policy: local_only_gitignored
+    project-FAQ.md:
+      role: session_memory
+      policy: local_only_gitignored
+    spec-drift-audit.md:
+      role: audit_artifact
+      policy: local_only_gitignored
+  immutable_history: []
+  create:
+    - .github/ISSUE_TEMPLATE/bug_report.md
+    - .github/ISSUE_TEMPLATE/feature_request.md
+    - .github/PULL_REQUEST_TEMPLATE.md
+  update:
+    - CHANGELOG.md  # fix owner links
+    - CONTRIBUTING.md  # fix owner links
+    - pyproject.toml  # fix owner URLs
+    - ROADMAP.md  # add issue URLs (local-only)
+  remove_or_archive: []
+  do_not_create: []
+  internal_docs_policy: keep_local_only
+
+planning_migration:
+  audit_sources:
+    - handoff.md
+    - ROADMAP.md
+    - fly-tying-tracker-spec.md
+    - CHANGELOG.md
+  disposition_ledger_path: /Users/finngidden/Projects/flytie/.migration-workspace/disposition-ledger.yaml
+  require_complete_disposition_ledger: true
+  require_strict_validation_before_writes: true
+  require_strict_validation_before_pr: true
+
+github:
+  labels:
+    - name: bug
+      color: "#d73a4a"
+      description: Something isn't working
+    - name: enhancement
+      color: "#a2eeef"
+      description: New feature or request
+    - name: documentation
+      color: "#0075ca"
+      description: Improvements or additions to documentation
+    - name: good first issue
+      color: "#7057ff"
+      description: Good for newcomers
+    - name: wontfix
+      color: "#ffffff"
+      description: This will not be worked on
+    - name: ai
+      color: "#f97583"
+      description: AI enrichment features and prompts
+    - name: inventory
+      color: "#d2b8d3"
+      description: Fly box and inventory management
+    - name: ci-infra
+      color: "#e3b341"
+      description: CI/CD and infrastructure
+    - name: security
+      color: "#b60205"
+      description: Security and privacy
+    - name: testing
+      color: "#1d76db"
+      description: Test suite and coverage
+    - name: performance
+      color: "#fbca04"
+      description: Performance and optimization
+  milestone_strategy: >
+    Create milestones for v0.3.0 and v0.4.0.
+    v0.5.0+ items go into a single "v0.5+ backlog" milestone.
+  issue_creation: enabled
+  pull_request_mode: draft
+  ruleset:
+    target: main
+    desired_rules: []
+    enforcement_status: no_ruleset
+  integrations:
+    pre-commit-ci: enabled
+
+quality:
+  setup: pip install -e ".[dev,pdf,ai]"
+  required_commands:
+    - ruff format --check src tests
+    - ruff check src tests
+    - mypy src
+    - pytest --cov=src/flytie --cov-report=term-missing
+    - pytest -m smoke
+  required_check_names:
+    - lint
+    - type-check
+    - test
+  generated_drift_check: git diff --exit-code
+
+safety:
+  sensitive_paths_or_patterns:
+    - .env
+    - "*.key"
+    - "*.pem"
+    - secrets.*
+    - "*.db"
+    - "*.db-wal"
+    - "*.db-shm"
+    - handoff.md
+    - CLAUDE.md
+    - ROADMAP.md
+    - ai-development-practices/
+    - collaboration-retrospective/
+    - phase-summaries/
+    - pending-lessons.md
+    - project-FAQ.md
+    - spec-drift-audit.md
+    - .migration-workspace/
+  prohibited_data:
+    - ANHROPIC_API_KEY
+    - full_database_exports
+    - internal_narrative_docs
+  disposable_validation_root: null
+  project_specific_boundaries:
+    - never publish internal development-practices content
+    - never publish collaboration-retrospective content
+    - never include API keys in any committed file
+    - never weaken quality gates
+
+license:
+  type: MIT
+  copyright_holder: Finn Gidden
+  year: "2026"
+
+visibility:
+  current: public
+  remain_private: false
+  allow_automatic_visibility_change: false
+
+public_readiness_audit:
+  enabled: false
+  checks: []
+
+artifact_retention:
+  working_directory: /Users/finngidden/Projects/flytie/.migration-workspace
+  backup_directory: /tmp/flytie-migration-backup-20260804-092030
+  profile_local_only: true
+  full_ledger_local_only: true
+  commit_full_ledger: false
+  pr_summary:
+    enabled: true
+    public_safe: true
+    include_full_ledger: false
+
+automation_authority:
+  allowed:
+    create_backup: true
+    audit_documentation: true
+    edit_documentation: true
+    create_labels_and_milestone: true
+    create_issues: true
+    add_templates_and_ci: true
+    run_verification: true
+    commit_changes: true
+    push_approved_branches: true
+    open_draft_pull_requests: true
+  prohibited_without_new_approval:
+    - merge_pull_request
+    - tag_or_create_release
+    - change_repository_visibility
+    - delete_branches
+    - weaken_quality_gates
+    - destructive_cleanup
+    - change_product_scope
+    - publish_internal_continuity_documents
+    - combine_unpublished_product_work_with_migration
