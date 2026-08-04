@@ -4,12 +4,13 @@ All notable changes to **flytie** are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.3]
 
 ### Added
 
-- Handoff line-budget gate (`test_gates.py::test_handoff_stays_within_its_budget`) as the sixth smoke test, enforcing a 200-line hard cap on `handoff.md` to prevent session-cost bloat.
+- Handoff line-budget gate (`test_gates.py::test_handoff_stays_within_its_budget`) as the sixth smoke test, enforcing a 200-line hard cap on `handoff.md` to prevent session-cost bloat. Skipped during CI when the handoff is unreachable due to its untracked status.
 - Routing header to `handoff.md` directing content to its correct destination (CHANGELOG, spec, practices docs, GitHub Issues) with two anti-drift rules.
+- Cleaned up leftover 0.2.2 remnants.
 
 ### Changed
 
@@ -380,7 +381,8 @@ manager for fly tying patterns.
   TOML file; `FLYTIE_CONFIG_DIR`, `FLYTIE_DATA_DIR`, and `FLYTIE_DB_PATH`
   override resolved locations.
 
-[Unreleased]: https://github.com/gidde032/flytie/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/gidde032/flytie/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/gidde032/flytie/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/gidde032/flytie/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/gidde032/flytie/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gidde032/flytie/compare/v0.1.2...v0.2.0
