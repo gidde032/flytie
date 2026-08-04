@@ -29,28 +29,17 @@ def _project_root() -> Path:
 # ---------------------------------------------------------------------------
 
 
-def test_smoke_marker_collects_exactly_five_happy_path_tests() -> None:
-    """`pytest -m smoke` must collect exactly the spec's five happy-path tests.
+def test_smoke_marker_collects_exactly_six_happy_path_tests() -> None:
+    """`pytest -m smoke` must collect exactly six happy-path tests.
 
-    Spec §7 promises: "A `pytest -m smoke` marker exists for a five-test
-    happy-path suite intended for quick local feedback." Before v0.1.2 the
-    marker was registered in `pyproject.toml` but carried by zero tests, so
-    `pytest -m smoke` collected nothing. v0.1.2 Batch 3.1 attached the
-    marker to five carefully-chosen tests:
-
-      - init success                     (test_db.py)
-      - add + list round-trip            (test_cli_commands.py)
-      - view renders a pattern           (test_cli_commands.py)
-      - shop dedupes across patterns     (test_cli_phase3.py)
-      - export-db → import-db round-trip (test_portability.py)
+    v0.1.2 attached the marker to five tests (init, add+list, view,
+    shop, export-db round-trip). The docs/github-migration added a sixth
+    (handoff line-budget gate in test_gates.py) to keep the handoff
+    from ballooning between sessions.
 
     This regression test fails if a future change adds the marker to more
-    than five tests (the suite no longer fits the "quick local feedback"
-    promise) or drops it from any (the suite loses coverage of one of the
-    five happy-path operations). The exact-five contract matters: it's
-    what the spec promises, and it's what the pre-push hook in
-    `.pre-commit-config.yaml` relies on if a contributor wants to gate
-    only on smoke.
+    than six tests or drops it from any. The exact-count contract matters:
+    it's what the pre-push hook and CI rely on.
     """
     result = subprocess.run(
         [
@@ -84,8 +73,8 @@ def test_smoke_marker_collects_exactly_five_happy_path_tests() -> None:
         f"couldn't parse collection summary from pytest output:\n{result.stdout}"
     )
     collected = int(match.group(1))
-    assert collected == 5, (
-        f"Expected exactly 5 smoke tests; pytest -m smoke collected {collected}. "
+    assert collected == 6, (
+        f"Expected exactly 6 smoke tests; pytest -m smoke collected {collected}. "
         f"Full output:\n{result.stdout}"
     )
 

@@ -6,7 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- Handoff line-budget gate (`test_gates.py::test_handoff_stays_within_its_budget`) as the sixth smoke test, enforcing a 200-line hard cap on `handoff.md` to prevent session-cost bloat.
+- Routing header to `handoff.md` directing content to its correct destination (CHANGELOG, spec, practices docs, GitHub Issues) with two anti-drift rules.
+
+### Changed
+
+- Smoke marker count bumped from 5 to 6 to include the handoff gate test.
 
 ## [0.2.2] — 2026-07-10
 
