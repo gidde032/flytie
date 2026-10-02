@@ -1,6 +1,6 @@
 # flytie — Fly Tying Recipe Manager
 
-[![Watch the 45-second flytie trailer](https://raw.githubusercontent.com/gidde032/flytie/main/media/flytie-trailer-poster.jpg)](https://github.com/gidde032/flytie/releases/download/v0.2.3/flytie-trailer.mp4)
+https://github.com/user-attachments/assets/57774cd2-c934-4645-8590-cda10ecca933
 
 A local-first, AI-augmented command-line tool for managing fly tying patterns.
 Tag and search your patterns, track every tweak with automatic versioning,
@@ -135,7 +135,7 @@ Every command also has built-in help: `flytie <command> --help`.
 
 ## Project status
 
-Current release: `0.2.2`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
+Current release: `0.2.4`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
 release history.
 
 ## Development
