@@ -38,3 +38,38 @@ def test_handoff_stays_within_its_budget() -> None:
         f"Read the routing header at the top of the file and route "
         f"the overflow to its correct destination."
     )
+
+
+def test_release_workflow_creates_github_release() -> None:
+    """A pushed `v*` tag must produce a GitHub Release, not only a PyPI upload.
+
+    Before this gate, release.yml published to PyPI only, and tags v0.1.1 to
+    v0.2.3 had no GitHub Release until they were backfilled by hand. The
+    workflow must check the CHANGELOG section in `build` (before the
+    irreversible PyPI upload) and create the Release after `publish`.
+    """
+    text = (_project_root() / ".github" / "workflows" / "release.yml").read_text()
+    build = text.index("\n  build:")
+    publish = text.index("\n  publish:")
+    release = text.index("\n  github-release:")
+    preflight = text.index("Verify CHANGELOG has a section for this version")
+    assert build < preflight < publish, "CHANGELOG check must run in build, before publish"
+    assert publish < release
+    job = text[release:]
+    assert "needs: publish" in job
+    assert "contents: write" in job
+    assert "gh release create" in job and "--notes-file" in job
+
+
+def test_changelog_has_a_section_for_the_package_version() -> None:
+    """CHANGELOG.md must have a dated section for the current `__version__`.
+
+    The release workflow builds the GitHub Release notes from this section.
+    """
+    import re
+
+    from flytie import __version__
+
+    text = (_project_root() / "CHANGELOG.md").read_text()
+    pattern = rf"^## \[{re.escape(__version__)}\] — \d{{4}}-\d{{2}}-\d{{2}}$"
+    assert re.search(pattern, text, re.MULTILINE), f"no dated CHANGELOG section for {__version__}"
