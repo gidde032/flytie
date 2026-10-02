@@ -135,7 +135,7 @@ Every command also has built-in help: `flytie <command> --help`.
 
 ## Project status
 
-Current release: `0.2.2`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
+Current release: `0.2.4`. See [`CHANGELOG.md`](CHANGELOG.md) for the full
 release history.
 
 ## Development

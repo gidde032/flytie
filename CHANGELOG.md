@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.4] — 2026-10-02
+
+### Added
+
+- The release workflow now creates a GitHub Release for every version tag. The Release notes come from the tag's CHANGELOG section, and the sdist and wheel are attached.
+- The release `build` job now fails before the PyPI upload if `CHANGELOG.md` has no section for the tagged version.
+- Gate tests in `tests/test_gates.py` pin the GitHub Release job and require a dated CHANGELOG section for the package version.
+
+### Changed
+
+- The README now shows the 45-second flytie trailer as an inline video. The poster image `media/flytie-trailer-poster.jpg` is removed.
+
+### Fixed
+
+- CHANGELOG release headings and compare links.
+- The README "Current release" line now names the current version.
+
 ## [0.2.3] — 2026-08-04
 
 ### Added
@@ -385,7 +402,8 @@ manager for fly tying patterns.
   TOML file; `FLYTIE_CONFIG_DIR`, `FLYTIE_DATA_DIR`, and `FLYTIE_DB_PATH`
   override resolved locations.
 
-[Unreleased]: https://github.com/gidde032/flytie/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/gidde032/flytie/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/gidde032/flytie/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/gidde032/flytie/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/gidde032/flytie/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/gidde032/flytie/compare/v0.2.0...v0.2.1
