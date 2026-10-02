@@ -4,7 +4,9 @@ All notable changes to **flytie** are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.3]
+## [Unreleased]
+
+## [0.2.3] — 2026-08-04
 
 ### Added
 
@@ -347,7 +349,9 @@ guarantees. No breaking changes; existing scripts and databases keep working.
   implementation, and the new `flytie info` and `flytie tag list` commands
   documented.
 
-## [0.1.0] — 2026-05-22
+## 0.1.0 — 2026-05-22
+
+This release predates the public repository, so it has no tag.
 
 First public release. flytie is a local-first, AI-augmented command-line
 manager for fly tying patterns.
@@ -387,5 +391,4 @@ manager for fly tying patterns.
 [0.2.1]: https://github.com/gidde032/flytie/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/gidde032/flytie/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/gidde032/flytie/compare/v0.1.1...v0.1.2
-[0.1.1]: https://github.com/gidde032/flytie/compare/v0.1.0...v0.1.1
-[0.1.0]: https://github.com/gidde032/flytie/releases/tag/v0.1.0
+[0.1.1]: https://github.com/gidde032/flytie/releases/tag/v0.1.1
