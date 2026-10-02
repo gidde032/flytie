@@ -69,3 +69,7 @@ AGENTS.md
 # --- Misc scratch ---
 *.tmp
 *.bak
+
+# --- Trailer sources and render masters (only media/ is committed) ---
+trailer/
+media/*.mp4
