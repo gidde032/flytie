@@ -163,6 +163,7 @@ def test_my_command(env_dirs):
     result = runner.invoke(app, ["my-command"])
     assert result.exit_code == 0
 
+
 # Pattern 2: fixture injection (preferred for new tests; more discoverable)
 def test_my_command(env_dirs, cli_runner):
     result = cli_runner.invoke(app, ["my-command"])
